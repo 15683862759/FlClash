@@ -166,6 +166,8 @@ class _ProfilesGrid extends ConsumerWidget {
           crossAxisCount: columns,
           mainAxisSpacing: spacing,
           crossAxisSpacing: spacing,
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false,
           itemCount: profiles.length,
           itemBuilder: (context, index) {
             final profile = profiles[index];

@@ -319,6 +319,8 @@ class _AccessViewState extends ConsumerState<AccessView> {
             controller: _controller,
             child: ListView.builder(
               controller: _controller,
+              addAutomaticKeepAlives: false,
+              addSemanticIndexes: false,
               itemCount: packages.length,
               itemExtent: 72,
               itemBuilder: (_, index) {
