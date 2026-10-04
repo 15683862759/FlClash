@@ -17,7 +17,15 @@ GroupsState currentGroupsState(Ref ref) {
 }
 
 Group _withoutSelection(Group group) {
-  final all = group.all.any(_hasSelection)
+  final needsProxyStrip = group.all.any(_hasSelection);
+  final needsGroupStrip = group.now?.isNotEmpty ?? false;
+  // Large subscriptions rebuild this for every groupsProvider emit; keep
+  // identity when the group is already selection-free so Riverpod/list
+  // equality can short-circuit downstream proxiesListState.
+  if (!needsGroupStrip && !needsProxyStrip) {
+    return group;
+  }
+  final all = needsProxyStrip
       ? [
           for (final proxy in group.all)
             _hasSelection(proxy) ? proxy.copyWith(now: '') : proxy,
