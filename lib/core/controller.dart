@@ -132,11 +132,13 @@ class CoreController {
   /// Generation of the last full proxies tree held in [_proxiesCache].
   int _proxiesGeneration = 0;
   ProxiesData? _proxiesCache;
+  List<Group>? _lastGroups;
 
   /// Invalidate the host-side proxies cache (e.g. after profile apply).
   void invalidateProxiesCache() {
     _proxiesGeneration = 0;
     _proxiesCache = null;
+    _lastGroups = null;
   }
 
   Future<List<Group>> getProxiesGroups({
@@ -148,18 +150,47 @@ class CoreController {
   }) async {
     final since = forceFull ? 0 : _proxiesGeneration;
     final snapshot = await _interface.getProxies(since: since);
-    final ProxiesData proxiesData;
-    if (snapshot.full || _proxiesCache == null) {
-      proxiesData = _mergeSelectedIntoProxies(snapshot.data, snapshot.selected);
-      _proxiesCache = proxiesData;
+
+    // Selection-only delta: patch "now" on the last groups list and re-sort
+    // in-process — no isolate, no Group.fromJson over thousands of leaves.
+    if (!snapshot.full &&
+        _proxiesCache != null &&
+        _lastGroups != null &&
+        _lastGroups!.isNotEmpty) {
+      _proxiesCache = _mergeSelectedIntoProxies(
+        _proxiesCache!,
+        snapshot.selected,
+      );
       _proxiesGeneration = snapshot.generation;
-    } else {
-      // Delta: reuse the tree, only group "now" fields move.
-      proxiesData = _mergeSelectedIntoProxies(_proxiesCache!, snapshot.selected);
-      _proxiesCache = proxiesData;
-      _proxiesGeneration = snapshot.generation;
+      final selected = snapshot.selected;
+      final patched = <Group>[
+        for (final group in _lastGroups!)
+          if (selected[group.name] != null &&
+              selected[group.name] != group.now)
+            group.copyWith(now: selected[group.name])
+          else
+            group,
+      ];
+      final sorted = computeSort(
+        groups: patched,
+        sortType: sortType,
+        delayMap: delayMap,
+        selectedMap: selectedMap,
+        defaultTestUrl: defaultTestUrl,
+      );
+      _lastGroups = sorted;
+      return sorted;
     }
-    return toGroupsTask(
+
+    final proxiesData = _mergeSelectedIntoProxies(
+      snapshot.full || _proxiesCache == null
+          ? snapshot.data
+          : _proxiesCache!,
+      snapshot.selected,
+    );
+    _proxiesCache = proxiesData;
+    _proxiesGeneration = snapshot.generation;
+    final groups = await toGroupsTask(
       ComputeGroupsState(
         proxiesData: proxiesData,
         sortType: sortType,
@@ -168,6 +199,8 @@ class CoreController {
         defaultTestUrl: defaultTestUrl,
       ),
     );
+    _lastGroups = groups;
+    return groups;
   }
 
   /// Writes Core selection ("now") into cached group maps without a full rebuild.
