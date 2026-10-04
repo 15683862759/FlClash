@@ -322,6 +322,9 @@ func updateConfig(params *UpdateParams) error {
 		setGeoResourceUrl(geoType, link)
 	}
 	syncGeoUpdater(params.GeoAutoUpdate, params.GeoUpdateInterval)
+	// Mode/port patches do not change the tree, but selected "now" might;
+	// a generation bump keeps the host from merging stale full snapshots.
+	bumpProxiesGeneration()
 	if routeChanged {
 		bumpRouteEpoch()
 	}
@@ -421,6 +424,7 @@ func applyConfig(params *SetupParams) error {
 	currentConfig = cfg
 	hub.ApplyConfig(cfg)
 	patchSelectGroup(params.SelectedMap)
+	bumpProxiesGeneration()
 	bumpRouteEpoch()
 	updateListeners(cfg)
 	reconcileGeoUpdater()
