@@ -136,6 +136,7 @@ func captureFrames(t *testing.T, run func()) [][]byte {
 	previous := swapConn(fake)
 	defer swapConn(previous)
 	run()
+	settleMessageBatcher()
 	return fake.frames(t)
 }
 
