@@ -317,9 +317,13 @@ jobs:
     # Releases publish where the release links point: the public repository.
     # A manual run builds just the macOS DMGs, the one artifact that cannot be
     # produced on any other host.
+    # matrix is not available in job-level if at parse time; manual runs use
+    # build-macos-arm64.yaml. Tag releases on the public repo still build all
+    # platforms here.
     if: >-
-      (github.repository == 'chen08209/FlClash' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-      (github.event_name == 'workflow_dispatch' && matrix.platform == 'macos')
+      github.repository == 'chen08209/FlClash' &&
+      github.event_name == 'push' &&
+      startsWith(github.ref, 'refs/tags/v')
     needs: [ dart, plugins, go, android, rust, windows-helper-test ]
     runs-on: ${{ matrix.os }}
     strategy:
