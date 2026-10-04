@@ -403,9 +403,14 @@ void main() {
       (invocation) async =>
           _provider(invocation.positionalArguments.first as String),
     );
-    when(
-      () => core.getProxies(),
-    ).thenAnswer((_) async => const ProxiesData(proxies: {}, all: []));
+    when(() => core.getProxies()).thenAnswer(
+      (_) async => const ProxiesSnapshot(
+        generation: 0,
+        full: true,
+        data: ProxiesData(proxies: {}, all: []),
+        selected: {},
+      ),
+    );
     await pump(tester, container);
 
     await tester.tap(find.byGlyph(AppGlyphs.sync));
@@ -429,9 +434,14 @@ void main() {
         message: '503 Service Unavailable',
       ),
     );
-    when(
-      () => core.getProxies(),
-    ).thenAnswer((_) async => const ProxiesData(proxies: {}, all: []));
+    when(() => core.getProxies()).thenAnswer(
+      (_) async => const ProxiesSnapshot(
+        generation: 0,
+        full: true,
+        data: ProxiesData(proxies: {}, all: []),
+        selected: {},
+      ),
+    );
     await pump(tester, container);
 
     await tester.tap(find.byGlyph(AppGlyphs.sync));
@@ -491,9 +501,14 @@ void main() {
     when(
       () => core.getExternalProvider('editable'),
     ).thenAnswer((_) async => provider);
-    when(
-      () => core.getProxies(),
-    ).thenAnswer((_) async => const ProxiesData(proxies: {}, all: []));
+    when(() => core.getProxies()).thenAnswer(
+      (_) async => const ProxiesSnapshot(
+        generation: 0,
+        full: true,
+        data: ProxiesData(proxies: {}, all: []),
+        selected: {},
+      ),
+    );
 
     final container = containerFor(tester, [provider]);
     await pump(tester, container);
@@ -613,9 +628,14 @@ void main() {
     when(
       () => core.getExternalProvider('http-one'),
     ).thenAnswer((_) async => provider);
-    when(
-      () => core.getProxies(),
-    ).thenAnswer((_) async => const ProxiesData(proxies: {}, all: []));
+    when(() => core.getProxies()).thenAnswer(
+      (_) async => const ProxiesSnapshot(
+        generation: 0,
+        full: true,
+        data: ProxiesData(proxies: {}, all: []),
+        selected: {},
+      ),
+    );
 
     final container = containerFor(tester, [provider]);
     await pump(tester, container);

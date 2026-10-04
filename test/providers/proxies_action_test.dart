@@ -93,21 +93,23 @@ void main() {
   group('updateGroups', () {
     test('publishes the groups derived from core proxy data', () async {
       when(core.getProxies).thenAnswer(
-        (_) async => ProxiesData(
-          all: const ['Proxy', 'Direct'],
-          proxies: Map<String, dynamic>.from({
-            'Proxy': Map<String, dynamic>.from({
-              'name': 'Proxy',
-              'type': 'Selector',
-              'now': 'HK-01',
-              'all': ['HK-01'],
-            }),
-            'Direct': Map<String, dynamic>.from({
-              'name': 'Direct',
-              'type': 'Direct',
-            }),
-            'HK-01': Map<String, dynamic>.from({'name': 'HK-01', 'type': 'ss'}),
-          }),
+        (_) async => const ProxiesSnapshot(
+          generation: 0,
+          full: true,
+          data: ProxiesData(
+            all: ['Proxy', 'Direct'],
+            proxies: {
+              'Proxy': {
+                'name': 'Proxy',
+                'type': 'Selector',
+                'now': 'HK-01',
+                'all': ['HK-01'],
+              },
+              'Direct': {'name': 'Direct', 'type': 'Direct'},
+              'HK-01': {'name': 'HK-01', 'type': 'ss'},
+            },
+          ),
+          selected: {},
         ),
       );
       final container = buildContainer();
@@ -128,24 +130,23 @@ void main() {
           if (attempt == 1) {
             throw StateError('core down');
           }
-          return ProxiesData(
-            all: const ['Proxy', 'Direct'],
-            proxies: Map<String, dynamic>.from({
-              'Proxy': Map<String, dynamic>.from({
-                'name': 'Proxy',
-                'type': 'Selector',
-                'now': 'HK-01',
-                'all': ['HK-01'],
-              }),
-              'Direct': Map<String, dynamic>.from({
-                'name': 'Direct',
-                'type': 'Direct',
-              }),
-              'HK-01': Map<String, dynamic>.from({
-                'name': 'HK-01',
-                'type': 'ss',
-              }),
-            }),
+          return const ProxiesSnapshot(
+            generation: 0,
+            full: true,
+            data: ProxiesData(
+              all: ['Proxy', 'Direct'],
+              proxies: {
+                'Proxy': {
+                  'name': 'Proxy',
+                  'type': 'Selector',
+                  'now': 'HK-01',
+                  'all': ['HK-01'],
+                },
+                'Direct': {'name': 'Direct', 'type': 'Direct'},
+                'HK-01': {'name': 'HK-01', 'type': 'ss'},
+              },
+            ),
+            selected: {},
           );
         });
         final container = buildContainer();

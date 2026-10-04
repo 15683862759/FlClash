@@ -165,8 +165,7 @@ class CoreController {
       final selected = snapshot.selected;
       final patched = <Group>[
         for (final group in _lastGroups!)
-          if (selected[group.name] != null &&
-              selected[group.name] != group.now)
+          if (selected[group.name] != null && selected[group.name] != group.now)
             group.copyWith(now: selected[group.name])
           else
             group,
@@ -183,9 +182,7 @@ class CoreController {
     }
 
     final proxiesData = _mergeSelectedIntoProxies(
-      snapshot.full || _proxiesCache == null
-          ? snapshot.data
-          : _proxiesCache!,
+      snapshot.full || _proxiesCache == null ? snapshot.data : _proxiesCache!,
       snapshot.selected,
     );
     _proxiesCache = proxiesData;
@@ -215,7 +212,10 @@ class CoreController {
     for (final entry in selected.entries) {
       final raw = proxies[entry.key];
       if (raw is Map) {
-        proxies[entry.key] = {...Map<String, dynamic>.from(raw), 'now': entry.value};
+        proxies[entry.key] = {
+          ...Map<String, dynamic>.from(raw),
+          'now': entry.value,
+        };
       }
     }
     return ProxiesData(proxies: proxies, all: data.all);

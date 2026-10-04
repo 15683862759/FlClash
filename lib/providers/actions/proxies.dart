@@ -140,10 +140,7 @@ class ProxiesAction extends _$ProxiesAction {
     // rapidly picks a replacement; 150ms still coalesces double-taps.
     debouncer.call(
       (FunctionTag.changeProxy, groupName),
-      (
-        String groupName,
-        String proxyName,
-      ) async {
+      (String groupName, String proxyName) async {
         final switched = await changeProxy(
           groupName: groupName,
           proxyName: proxyName,
@@ -153,15 +150,17 @@ class ProxiesAction extends _$ProxiesAction {
         if (switched) {
           final groups = ref.read(groupsProvider);
           if (groups.isNotEmpty) {
-            ref.read(groupsProvider.notifier).update(
-              (list) => [
-                for (final group in list)
-                  if (group.name == groupName)
-                    group.copyWith(now: proxyName)
-                  else
-                    group,
-              ],
-            );
+            ref
+                .read(groupsProvider.notifier)
+                .update(
+                  (list) => [
+                    for (final group in list)
+                      if (group.name == groupName)
+                        group.copyWith(now: proxyName)
+                      else
+                        group,
+                  ],
+                );
           }
         }
       },

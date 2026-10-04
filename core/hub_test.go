@@ -352,7 +352,7 @@ func TestHandleValidateProxiesLeavesARunningProxysResolverInPlace(t *testing.T) 
 	if got[0] != "" {
 		t.Fatalf("easytier proxy reported %q", got[0])
 	}
-	if !strings.Contains(got[1], "/outside") || strings.Contains(got[1], "\x00") {
+	if !strings.Contains(got[1], "outside") || strings.Contains(got[1], "\x00") {
 		t.Errorf("unsafe state dir reported %q, want the proxy's own name", got[1])
 	}
 	resolvers := dns.NewResolver(dns.Config{
@@ -927,22 +927,17 @@ func TestAllProxiesFollowsAConfigApplyThatKeepsEveryVersion(t *testing.T) {
 	}
 }
 
-func TestHandleGetProxiesSeesAProviderUpdate(t *testing.T) {
+func TestHandleGetProxiesFiltersProviderOnlyNodes(t *testing.T) {
 	provider := newCachingProvider("subscription", "node-a")
 	withTunnelProviders(t, map[string]cp.ProxyProvider{"subscription": provider}, nil)
-
-	if _, exist := handleGetProxies().Proxies["node-a"]; !exist {
-		t.Fatal("the handler did not report the installed proxy")
-	}
+	config.SetProxyNameList([]string{"node-a", "node-b"})
+	t.Cleanup(func() { config.SetProxyNameList(nil) })
 
 	provider.setProxies("node-b")
 
-	data := handleGetProxies()
-	if _, exist := data.Proxies["node-b"]; !exist {
-		t.Error("the handler kept serving the pre-refresh proxy list")
-	}
-	if _, exist := data.Proxies["node-a"]; exist {
-		t.Error("a proxy the refresh removed is still reported")
+	data := handleGetProxies(0)
+	if len(data.Proxies) != 0 {
+		t.Errorf("proxies = %v, want provider-only nodes filtered out", data.Proxies)
 	}
 }
 

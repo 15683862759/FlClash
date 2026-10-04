@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/metacubex/mihomo/adapter"
-	"github.com/metacubex/mihomo/adapter/outboundgroup"
 	"github.com/metacubex/mihomo/tunnel"
 )
 
@@ -15,9 +14,8 @@ import (
 // the picks are re-read on this timer while the host watches.
 const routePollInterval = 2 * time.Second
 
-type pickableGroup interface {
-	outboundgroup.ProxyGroup
-	outboundgroup.SelectAble
+type routePickable interface {
+	Now() string
 }
 
 type routeTracker struct {
@@ -71,7 +69,7 @@ func readPicks() (map[string]string, map[string]uint32) {
 		if !ok {
 			continue
 		}
-		group, ok := outbound.ProxyAdapter.(pickableGroup)
+		group, ok := outbound.ProxyAdapter.(routePickable)
 		if !ok {
 			continue
 		}

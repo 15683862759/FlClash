@@ -96,7 +96,6 @@ mixin CoreInterface {
   FutureOr<bool> resetConnections();
 }
 
-
 /// Core getProxies response: full tree or selection-only delta for large
 /// subscriptions. [full] false means only [selected] is populated.
 class ProxiesSnapshot {
@@ -284,7 +283,6 @@ abstract class CoreHandlerInterface with CoreInterface {
       selected: selected,
     );
   }
-
 
   @override
   Future<ChangeProxyResult> changeProxy(

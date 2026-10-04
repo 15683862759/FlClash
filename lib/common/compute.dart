@@ -47,9 +47,8 @@ List<Group> computeSort({
           realState: realStateFor(proxy.name),
         ),
     };
-    final sorted =
-        List.of(proxies)
-          ..sort((a, b) => delayStates[a.name]!.compareTo(delayStates[b.name]!));
+    final sorted = List.of(proxies)
+      ..sort((a, b) => delayStates[a.name]!.compareTo(delayStates[b.name]!));
     return _sameOrder(sorted, proxies) ? proxies : sorted;
   }
 
@@ -158,8 +157,7 @@ List<Group> computeHideTimeout({
       final delay = delayMap[testUrl]?[state.proxyName];
       return delay == null || delay > 0;
     }).toList();
-    return visible.length == group.all.length &&
-            _sameOrder(visible, group.all)
+    return visible.length == group.all.length && _sameOrder(visible, group.all)
         ? group
         : group.copyWith(all: visible.isEmpty ? group.all : visible);
   }).toList();
