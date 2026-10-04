@@ -250,6 +250,12 @@ class CoreController {
     return _interface.getTotalTraffic(onlyStatisticsProxy);
   }
 
+  Future<({Traffic now, Traffic total})> getTrafficStats(
+    bool onlyStatisticsProxy,
+  ) async {
+    return _interface.getTrafficStats(onlyStatisticsProxy);
+  }
+
   Future<CoreMemoryStats?> getMemoryStats() async {
     return _interface.getMemoryStats();
   }

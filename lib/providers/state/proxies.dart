@@ -282,18 +282,18 @@ String? selectedProxyName(Ref ref, String groupName) {
   return group?.getCurrentSelectedName(proxyName ?? '');
 }
 
+final _groupTypeNames = {for (final type in GroupType.values) type.name};
+
 @riverpod
 String proxyDesc(Ref ref, Proxy proxy) {
-  final groupTypeNamesList = GroupType.values.map((e) => e.name).toList();
-  if (!groupTypeNamesList.contains(proxy.type)) {
+  if (!_groupTypeNames.contains(proxy.type)) {
     return proxy.type;
-  } else {
-    final groups = ref.watch(groupsProvider);
-    final index = groups.indexWhere((element) => element.name == proxy.name);
-    if (index == -1) return proxy.type;
-    final state = ref.watch(realSelectedProxyStateProvider(proxy.name));
-    return "${proxy.type}(${state.proxyName.isNotEmpty ? state.proxyName : '*'})";
   }
+  final groups = ref.watch(groupsProvider);
+  final index = groups.indexWhere((element) => element.name == proxy.name);
+  if (index == -1) return proxy.type;
+  final state = ref.watch(realSelectedProxyStateProvider(proxy.name));
+  return "${proxy.type}(${state.proxyName.isNotEmpty ? state.proxyName : '*'})";
 }
 
 @riverpod
