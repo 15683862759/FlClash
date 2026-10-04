@@ -95,9 +95,10 @@ public class WindowPlugin: NSObject, FlutterPlugin {
     @objc private func applicationActivityChanged(_ notification: Notification) {
         active = notification.name == NSApplication.willBecomeActiveNotification
         DispatchQueue.main.async { [weak self] in
-            guard let self, (try? self.controller.isVisible()) == false else { return }
-            self.reportedHidden = true
-            self.lifecycle?.sendMessage("AppLifecycleState.hidden")
+            guard let self else { return }
+            let isVisible = (try? self.controller.isVisible()) ?? false
+            self.reportedHidden = !isVisible
+            self.lifecycle?.sendMessage(self.lifecycleState(visible: isVisible))
         }
     }
 
@@ -110,6 +111,15 @@ public class WindowPlugin: NSObject, FlutterPlugin {
 
     private func emit(_ name: String) {
         channel?.invokeMethod("onEvent", arguments: ["name": name])
+    }
+
+    /// Dart treats `inactive` as visible, while `hidden` suspends route
+    /// watching. A visible main window must not get stuck there.
+    private func lifecycleState(visible: Bool) -> String {
+        if !visible {
+            return "AppLifecycleState.hidden"
+        }
+        return active ? "AppLifecycleState.resumed" : "AppLifecycleState.inactive"
     }
 
     private func makeHandlers() -> [String: (Arguments) throws -> Any?] {
