@@ -156,15 +156,15 @@ type nodeView struct {
 }
 
 const (
-	messageMethod                  CoreMethod = "message"
-	initClashMethod                CoreMethod = "initClash"
-	getIsInitMethod                CoreMethod = "getIsInit"
-	forceGcMethod                  CoreMethod = "forceGc"
-	shutdownMethod                 CoreMethod = "shutdown"
-	validateConfigMethod           CoreMethod = "validateConfig"
-	validateProxiesMethod          CoreMethod = "validateProxies"
-	updateConfigMethod             CoreMethod = "updateConfig"
-	getProxiesMethod               CoreMethod = "getProxies"
+	messageMethod         CoreMethod = "message"
+	initClashMethod       CoreMethod = "initClash"
+	getIsInitMethod       CoreMethod = "getIsInit"
+	forceGcMethod         CoreMethod = "forceGc"
+	shutdownMethod        CoreMethod = "shutdown"
+	validateConfigMethod  CoreMethod = "validateConfig"
+	validateProxiesMethod CoreMethod = "validateProxies"
+	updateConfigMethod    CoreMethod = "updateConfig"
+	getProxiesMethod      CoreMethod = "getProxies"
 	// kept for decode compatibility; hosts may still send bare getProxies
 	changeProxyMethod              CoreMethod = "changeProxy"
 	getTrafficMethod               CoreMethod = "getTraffic"
