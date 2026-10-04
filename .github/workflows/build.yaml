@@ -321,7 +321,8 @@ jobs:
     # build-macos-arm64.yaml. Tag releases on the public repo still build all
     # platforms here.
     if: >-
-      github.repository == 'chen08209/FlClash' &&
+      (github.repository == 'chen08209/FlClash' ||
+        github.repository == '15683862759/FlClash') &&
       github.event_name == 'push' &&
       startsWith(github.ref, 'refs/tags/v')
     needs: [ dart, plugins, go, android, rust, windows-helper-test ]
@@ -442,7 +443,10 @@ jobs:
     permissions:
       contents: write
     needs: [ build ]
-    if: github.repository == 'chen08209/FlClash' && startsWith(github.ref, 'refs/tags/v')
+    if: >-
+      (github.repository == 'chen08209/FlClash' ||
+        github.repository == '15683862759/FlClash') &&
+      startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     services:
       telegram-bot-api:
