@@ -178,6 +178,9 @@ Future<int> _package(
   final depExit = await _ensureDependencies(platform);
   if (depExit != 0) return depExit;
 
+  final impellerExit = await _configureMacosImpeller(platform, rootDir, arch);
+  if (impellerExit != 0) return impellerExit;
+
   final activateResult = await Process.run('dart', [
     'pub',
     'global',
@@ -222,6 +225,42 @@ Future<int> _package(
   });
   final exitCode = await process.exitCode;
   return exitCode;
+}
+
+/// Impeller renders the window wrong on Intel Macs with the pinned Flutter, so
+/// the packaged Intel build turns it off; arm64 keeps the default.
+Future<int> _configureMacosImpeller(
+  String platform,
+  String rootDir,
+  String arch,
+) async {
+  if (platform != 'macos' || arch != 'amd64') {
+    return 0;
+  }
+  final plist = p.join(rootDir, 'macos', 'Runner', 'Info.plist');
+  var result = await Process.run('plutil', [
+    '-replace',
+    'FLTEnableImpeller',
+    '-bool',
+    'NO',
+    plist,
+  ]);
+  if (result.exitCode != 0) {
+    result = await Process.run('plutil', [
+      '-insert',
+      'FLTEnableImpeller',
+      '-bool',
+      'NO',
+      plist,
+    ]);
+  }
+  if (result.exitCode != 0) {
+    stderr.writeln(
+      'plutil could not turn Impeller off for the Intel macOS build: '
+      '${result.stderr}',
+    );
+  }
+  return result.exitCode;
 }
 
 String _detectArch() {

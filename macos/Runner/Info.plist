@@ -39,6 +39,11 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>$(PRODUCT_COPYRIGHT)</string>
+	<!-- App Nap throttles the timers behind Core events and probe refreshes
+	     while the window is not frontmost, which is how the app is normally
+	     used. -->
+	<key>NSAppSleepDisabled</key>
+	<true/>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
