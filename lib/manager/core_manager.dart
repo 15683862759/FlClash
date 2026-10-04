@@ -32,6 +32,11 @@ class _CoreContainerState extends ConsumerState<CoreManager>
   final List<DnsQuery> _bufferedDns = [];
   int _bufferedRequestCount = 0;
   int _bufferedDnsCount = 0;
+  late final Logs _logsNotifier;
+  late final Requests _requestsNotifier;
+  late final DnsQueries _dnsNotifier;
+  late final RequestCount _requestCountNotifier;
+  late final DnsQueryCount _dnsCountNotifier;
   // Cap in-flight buffers so a 400ms flood cannot allocate unbounded lists
   // before the next flush (FixedList still truncates on the provider side).
   static const _maxBufferedLogs = 400;
@@ -46,6 +51,11 @@ class _CoreContainerState extends ConsumerState<CoreManager>
   @override
   void initState() {
     super.initState();
+    _logsNotifier = ref.read(logsProvider.notifier);
+    _requestsNotifier = ref.read(requestsProvider.notifier);
+    _dnsNotifier = ref.read(dnsQueriesProvider.notifier);
+    _requestCountNotifier = ref.read(requestCountProvider.notifier);
+    _dnsCountNotifier = ref.read(dnsQueryCountProvider.notifier);
     coreEventManager.addListener(this);
     ref.read(updatingActionProvider.notifier);
     // A rejected profile stays selected on purpose: silently reverting to
@@ -61,16 +71,21 @@ class _CoreContainerState extends ConsumerState<CoreManager>
         ref.read(setupActionProvider.notifier).updateConfigDebounce();
       }
     });
-    ref.listenManual(appSettingProvider.select((state) => state.openLogs), (
-      prev,
-      next,
-    ) {
-      if (next) {
+    void syncLogSubscription(_, _) {
+      if (ref.read(appVisibleProvider) &&
+          ref.read(appSettingProvider.select((state) => state.openLogs))) {
         _core.startLog();
       } else {
         _core.stopLog();
       }
-    }, fireImmediately: true);
+    }
+
+    ref.listenManual(appVisibleProvider, syncLogSubscription);
+    ref.listenManual(
+      appSettingProvider.select((state) => state.openLogs),
+      syncLogSubscription,
+      fireImmediately: true,
+    );
   }
 
   @override
@@ -91,27 +106,27 @@ class _CoreContainerState extends ConsumerState<CoreManager>
     if (_bufferedLogs.isNotEmpty) {
       final logs = List<Log>.of(_bufferedLogs);
       _bufferedLogs.clear();
-      ref.read(logsProvider.notifier).addAll(logs);
+      _logsNotifier.addAll(logs);
     }
     if (_bufferedRequests.isNotEmpty) {
       final requests = List<TrackerInfo>.of(_bufferedRequests);
       _bufferedRequests.clear();
-      ref.read(requestsProvider.notifier).addRequests(requests);
+      _requestsNotifier.addRequests(requests);
     }
     if (_bufferedDns.isNotEmpty) {
       final queries = List<DnsQuery>.of(_bufferedDns);
       _bufferedDns.clear();
-      ref.read(dnsQueriesProvider.notifier).addQueries(queries);
+      _dnsNotifier.addQueries(queries);
     }
     if (_bufferedRequestCount != 0) {
       final delta = _bufferedRequestCount;
       _bufferedRequestCount = 0;
-      ref.read(requestCountProvider.notifier).update((count) => count + delta);
+      _requestCountNotifier.update((count) => count + delta);
     }
     if (_bufferedDnsCount != 0) {
       final delta = _bufferedDnsCount;
       _bufferedDnsCount = 0;
-      ref.read(dnsQueryCountProvider.notifier).update((count) => count + delta);
+      _dnsCountNotifier.update((count) => count + delta);
     }
   }
 

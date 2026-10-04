@@ -321,8 +321,10 @@ class SetupAction extends _$SetupAction {
         silence: silence,
         preloadInvoke: preloadInvoke,
         onUpdated: () async {
-          await ref.read(proxiesActionProvider.notifier).updateGroups();
-          await ref.read(providersProvider.notifier).syncProviders();
+          await Future.wait([
+            ref.read(proxiesActionProvider.notifier).updateGroups(),
+            ref.read(providersProvider.notifier).syncProviders(),
+          ]);
         },
       );
     });
@@ -364,34 +366,39 @@ class SetupAction extends _$SetupAction {
     final overrideNtp = ref.read(overrideNtpProvider);
     final appendSystemDns = networkSetting.appendSystemDns;
     final routeMode = networkSetting.routeMode;
-    final configMap = await _core.getConfig(profileId);
     String? scriptContent;
     final List<Rule> addedRules = [];
     final List<CustomProxy> proxies = [];
     final List<ProxyGroup> proxyGroups = [];
     final List<Rule> rules = [];
-    if (setupState.overwriteType == OverwriteType.script) {
-      scriptContent = await setupState.script?.content;
-    } else if (setupState.overwriteType == OverwriteType.standard) {
-      addedRules.addAll(setupState.addedRules);
-    } else {
-      proxies.addAll(setupState.customProxies);
-      proxyGroups.addAll(setupState.proxyGroups);
-      rules.addAll(setupState.rules);
-    }
     final realPatchConfig = patchConfig.copyWith(
       tun: patchConfig.tun.getRealTun(routeMode),
     );
+    final configMapFuture = _core.getConfig(profileId);
+    final profilesPathFuture = appPath.profilesPath;
+    final injectedProvidersFuture = Future(() async {
+      if (setupState.overwriteType == OverwriteType.script) {
+        scriptContent = await setupState.script?.content;
+      } else if (setupState.overwriteType == OverwriteType.standard) {
+        addedRules.addAll(setupState.addedRules);
+      } else {
+        proxies.addAll(setupState.customProxies);
+        proxyGroups.addAll(setupState.proxyGroups);
+        rules.addAll(setupState.rules);
+      }
+      return _resolveInjectedProviders(
+        setupState,
+        proxyGroups: proxyGroups,
+        rules: rules,
+      );
+    });
+    final configMap = await configMapFuture;
     Map<String, dynamic> rawConfig = configMap;
     if (scriptContent?.isNotEmpty == true) {
       rawConfig = await handleEvaluate(scriptContent!, rawConfig);
     }
-    final directory = await appPath.profilesPath;
-    final injected = await _resolveInjectedProviders(
-      setupState,
-      proxyGroups: proxyGroups,
-      rules: rules,
-    );
+    final directory = await profilesPathFuture;
+    final injected = await injectedProvidersFuture;
     final res = makeRealProfileTask(
       MakeRealProfileState(
         rules: rules,
