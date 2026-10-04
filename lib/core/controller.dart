@@ -129,13 +129,36 @@ class CoreController {
     return result;
   }
 
+  /// Generation of the last full proxies tree held in [_proxiesCache].
+  int _proxiesGeneration = 0;
+  ProxiesData? _proxiesCache;
+
+  /// Invalidate the host-side proxies cache (e.g. after profile apply).
+  void invalidateProxiesCache() {
+    _proxiesGeneration = 0;
+    _proxiesCache = null;
+  }
+
   Future<List<Group>> getProxiesGroups({
     required ProxiesSortType sortType,
     required DelayMap delayMap,
     required Map<String, String> selectedMap,
     required String defaultTestUrl,
+    bool forceFull = false,
   }) async {
-    final proxiesData = await _interface.getProxies();
+    final since = forceFull ? 0 : _proxiesGeneration;
+    final snapshot = await _interface.getProxies(since: since);
+    final ProxiesData proxiesData;
+    if (snapshot.full || _proxiesCache == null) {
+      proxiesData = _mergeSelectedIntoProxies(snapshot.data, snapshot.selected);
+      _proxiesCache = proxiesData;
+      _proxiesGeneration = snapshot.generation;
+    } else {
+      // Delta: reuse the tree, only group "now" fields move.
+      proxiesData = _mergeSelectedIntoProxies(_proxiesCache!, snapshot.selected);
+      _proxiesCache = proxiesData;
+      _proxiesGeneration = snapshot.generation;
+    }
     return toGroupsTask(
       ComputeGroupsState(
         proxiesData: proxiesData,
@@ -145,6 +168,24 @@ class CoreController {
         defaultTestUrl: defaultTestUrl,
       ),
     );
+  }
+
+  /// Writes Core selection ("now") into cached group maps without a full rebuild.
+  ProxiesData _mergeSelectedIntoProxies(
+    ProxiesData data,
+    Map<String, String> selected,
+  ) {
+    if (selected.isEmpty) {
+      return data;
+    }
+    final proxies = Map<String, dynamic>.from(data.proxies);
+    for (final entry in selected.entries) {
+      final raw = proxies[entry.key];
+      if (raw is Map) {
+        proxies[entry.key] = {...Map<String, dynamic>.from(raw), 'now': entry.value};
+      }
+    }
+    return ProxiesData(proxies: proxies, all: data.all);
   }
 
   Future<ChangeProxyResult> changeProxy(ChangeProxyParams changeProxyParams) {
