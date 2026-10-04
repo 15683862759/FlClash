@@ -183,8 +183,49 @@ func proxyGroupNames(
 	return names
 }
 
-func handleGetProxies() ProxiesData {
+// proxiesGeneration advances whenever the proxy tree structure may change
+// (profile apply, config patch, provider load). Hosts pass the last seen
+// value as ProxiesQuery.Since to receive a selection-only delta.
+var proxiesGeneration atomic.Uint64
+
+func bumpProxiesGeneration() {
+	proxiesGeneration.Add(1)
+}
+
+func collectProxySelections(proxies map[string]constant.Proxy) map[string]string {
+	selected := make(map[string]string)
+	for name, proxy := range proxies {
+		if proxy == nil || !isProxyGroupType(proxy.Type()) {
+			continue
+		}
+		outbound, ok := proxy.(*adapter.Proxy)
+		if !ok {
+			continue
+		}
+		// ProxyGroup.Now covers selector/urltest/fallback/loadbalance.
+		type nower interface{ Now() string }
+		if g, ok := outbound.ProxyAdapter.(nower); ok {
+			if now := g.Now(); now != "" {
+				selected[name] = now
+			}
+		}
+	}
+	return selected
+}
+
+func handleGetProxies(since uint64) ProxiesData {
+	gen := proxiesGeneration.Load()
 	proxies := tunnel.AllProxies()
+	selected := collectProxySelections(proxies)
+
+	// Same generation: host already has the tree; only group "now" may have moved.
+	if since != 0 && since == gen {
+		return ProxiesData{
+			Generation: gen,
+			Full:       false,
+			Selected:   selected,
+		}
+	}
 
 	allNames := proxyGroupNames(config.GetProxyNameList(), func(name string) (constant.AdapterType, bool) {
 		p, ok := proxies[name]
@@ -199,8 +240,11 @@ func handleGetProxies() ProxiesData {
 		views[name] = proxyView(proxy)
 	}
 	return ProxiesData{
-		All:     allNames,
-		Proxies: views,
+		Generation: gen,
+		Full:       true,
+		All:        allNames,
+		Proxies:    views,
+		Selected:   selected,
 	}
 }
 
@@ -221,6 +265,12 @@ func proxyView(proxy constant.Proxy) any {
 	}
 	view["name"] = node.Name
 	return view
+}
+
+type pickableGroup interface {
+	Set(string) error
+	ForceSet(string)
+	Now() string
 }
 
 var (
@@ -867,6 +917,7 @@ func init() {
 		})
 	}
 	executor.DefaultProviderLoadedHook = func(providerName string) {
+		bumpProxiesGeneration()
 		scheduleReclaimOwnership()
 		sendMessage(Message{
 			Type: LoadedMessage,
