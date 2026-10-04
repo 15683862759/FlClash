@@ -179,6 +179,48 @@ void main() {
     );
   });
 
+  test('builds when the frozen boundary tag is missing', () {
+    final temp = Directory.systemTemp.createTempSync(
+      'flclash-changelog-missing-boundary-',
+    );
+    try {
+      void tempGit(List<String> arguments) {
+        final result = Process.runSync(
+          'git',
+          arguments,
+          workingDirectory: temp.path,
+        );
+        if (result.exitCode != 0) {
+          fail('git ${arguments.join(' ')} failed: ${result.stderr}');
+        }
+      }
+
+      tempGit(['init', '--quiet', '--initial-branch=main']);
+      tempGit(['config', 'user.email', 'changelog-test@example.com']);
+      tempGit(['config', 'user.name', 'Changelog test']);
+      tempGit(['commit', '--allow-empty', '--quiet', '--message', 'feat: one']);
+      tempGit([
+        'commit',
+        '--allow-empty',
+        '--quiet',
+        '--message',
+        'chore(release): v0.8.96',
+      ]);
+      tempGit(['commit', '--allow-empty', '--quiet', '--message', 'fix: two']);
+      tempGit(['tag', 'v1.1.0']);
+
+      final builder = ChangelogBuilder(
+        Git(workingDirectory: temp.path),
+        boundary: 'v0.8.96',
+      );
+      final versions = builder.build().changelog.versions;
+
+      expect(versions.single.tag, 'v1.1.0');
+    } finally {
+      temp.deleteSync(recursive: true);
+    }
+  });
+
   test('a tag with no version in changelog.json is reported', () {
     final derived = build().changelog;
     final recorded = Changelog(

@@ -115,6 +115,17 @@ class Git {
   bool tagIsReachable(String name, {String revision = 'HEAD'}) =>
       _run(['tag', '--merged', revision, '--list', name]).trim().isNotEmpty;
 
+  String? commitBySubject(String subject) {
+    final output = _run([
+      'log',
+      '--all',
+      '--grep=^$subject\$',
+      '-1',
+      '--format=%H',
+    ]).trim();
+    return output.isEmpty ? null : output;
+  }
+
   String tagDate(String name) =>
       _run(['log', '-1', '--format=%cs', name]).trim();
 
