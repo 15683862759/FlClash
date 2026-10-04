@@ -264,7 +264,9 @@ func handleChangeProxy(params *ChangeProxyParams) *ChangeProxyResult {
 		return &ChangeProxyResult{Message: err.Error()}
 	}
 	changed := selector.Now() != before
-	refreshRouteLocked(false)
+	if changed {
+		refreshRouteLocked(false)
+	}
 	return &ChangeProxyResult{Changed: changed}
 }
 
@@ -380,10 +382,19 @@ func handleGetConnectionCount() int {
 }
 
 func handleCloseConnections() bool {
+	// Snapshot first so Range is not racing Close, then close in the
+	// background. Hung sockets on a dead node can block Close for seconds;
+	// waiting here stalls the next changeProxy / traffic IPC.
+	var trackers []statistic.Tracker
 	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
-		_ = c.Close()
+		trackers = append(trackers, c)
 		return true
 	})
+	for _, c := range trackers {
+		go func(c statistic.Tracker) {
+			_ = c.Close()
+		}(c)
+	}
 	return true
 }
 
