@@ -33,6 +33,9 @@ List<Group> computeSort({
     required Map<String, String> selectedMap,
     required String testUrl,
   }) {
+    if (delayMap.isEmpty) {
+      return proxies;
+    }
     final delayStates = {
       for (final proxy in proxies)
         proxy.name: computeProxyDelayState(
