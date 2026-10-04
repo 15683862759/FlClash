@@ -235,9 +235,27 @@ func handleGetProxies(since uint64) ProxiesData {
 		return p.Type(), true
 	})
 
-	views := make(map[string]any, len(proxies))
-	for name, proxy := range proxies {
-		views[name] = proxyView(proxy)
+	// Only encode groups and the members they reference. A large provider can
+	// leave hundreds of unused nodes in AllProxies that the host never shows.
+	views := make(map[string]any, len(allNames)*4)
+	for _, groupName := range allNames {
+		p, ok := proxies[groupName]
+		if !ok || p == nil {
+			continue
+		}
+		view := proxyView(p)
+		views[groupName] = view
+		memberNames := proxyViewMemberNames(view)
+		for _, memberName := range memberNames {
+			if _, exists := views[memberName]; exists {
+				continue
+			}
+			mp, ok := proxies[memberName]
+			if !ok || mp == nil {
+				continue
+			}
+			views[memberName] = proxyView(mp)
+		}
 	}
 	return ProxiesData{
 		Generation: gen,
@@ -264,7 +282,42 @@ func proxyView(proxy constant.Proxy) any {
 		return node
 	}
 	view["name"] = node.Name
+	// Host never reads latency history / provider extras on the proxies page.
+	delete(view, "history")
+	delete(view, "extra")
 	return view
+}
+
+func proxyViewMemberNames(view any) []string {
+	m, ok := view.(map[string]any)
+	if !ok {
+		return nil
+	}
+	raw, ok := m["all"]
+	if !ok || raw == nil {
+		return nil
+	}
+	switch members := raw.(type) {
+	case []any:
+		names := make([]string, 0, len(members))
+		for _, item := range members {
+			switch v := item.(type) {
+			case string:
+				if v != "" {
+					names = append(names, v)
+				}
+			case map[string]any:
+				if name, _ := v["name"].(string); name != "" {
+					names = append(names, name)
+				}
+			}
+		}
+		return names
+	case []string:
+		return members
+	default:
+		return nil
+	}
 }
 
 type pickableGroup interface {
