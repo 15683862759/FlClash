@@ -297,25 +297,14 @@ String? selectedProxyName(Ref ref, String groupName) {
 
 final _groupTypeNames = {for (final type in GroupType.values) type.name};
 
-Map<String, Group>? _groupsByNameCache;
-List<Group>? _groupsByNameSource;
-
-/// Rebuilds only when the groups list identity changes (typical Riverpod emit).
-Map<String, Group> _groupsByNameOf(List<Group> groups) {
-  if (identical(groups, _groupsByNameSource) && _groupsByNameCache != null) {
-    return _groupsByNameCache!;
-  }
-  _groupsByNameSource = groups;
-  return _groupsByNameCache = {for (final group in groups) group.name: group};
-}
-
 @riverpod
 String proxyDesc(Ref ref, Proxy proxy) {
   if (!_groupTypeNames.contains(proxy.type)) {
     return proxy.type;
   }
-  final groups = ref.watch(groupsProvider);
-  final group = _groupsByNameOf(groups)[proxy.name];
+  final group = ref.watch(
+    groupsProvider.select((state) => state.getGroup(proxy.name)),
+  );
   if (group == null) return proxy.type;
   final state = ref.watch(realSelectedProxyStateProvider(proxy.name));
   return "${proxy.type}(${state.proxyName.isNotEmpty ? state.proxyName : '*'})";
