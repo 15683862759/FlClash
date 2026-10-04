@@ -55,7 +55,7 @@ final defaultTextScaleFactor =
 /// How long the Core may spend on one delay test. It spends this twice in the
 /// worst case - once queueing for a slot, once on the probe itself - so the
 /// guard below has to outlast twice this value.
-const delayTestTimeoutDuration = Duration(seconds: 8);
+const delayTestTimeoutDuration = Duration(seconds: 5);
 
 const delayTestGuardDuration = Duration(seconds: 30);
 
