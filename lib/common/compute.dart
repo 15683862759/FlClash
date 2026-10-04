@@ -14,6 +14,18 @@ List<Group> computeSort({
     return groups;
   }
 
+  final realStateCache = <String, SelectedProxyState>{};
+  SelectedProxyState realStateFor(String proxyName) {
+    return realStateCache.putIfAbsent(
+      proxyName,
+      () => computeRealSelectedProxyState(
+        proxyName,
+        groups: groups,
+        selectedMap: selectedMap,
+      ),
+    );
+  }
+
   List<Proxy> sortOfDelay({
     required List<Group> groups,
     required List<Proxy> proxies,
@@ -29,6 +41,7 @@ List<Group> computeSort({
           groups: groups,
           selectedMap: selectedMap,
           delayMap: delayMap,
+          realState: realStateFor(proxy.name),
         ),
     };
     return List.of(proxies)
@@ -157,12 +170,15 @@ DelayState computeProxyDelayState({
   required List<Group> groups,
   required Map<String, String> selectedMap,
   required DelayMap delayMap,
+  SelectedProxyState? realState,
 }) {
-  final state = computeRealSelectedProxyState(
-    proxyName,
-    groups: groups,
-    selectedMap: selectedMap,
-  );
+  final state =
+      realState ??
+      computeRealSelectedProxyState(
+        proxyName,
+        groups: groups,
+        selectedMap: selectedMap,
+      );
   final currentDelayMap =
       delayMap[state.testUrl.takeFirstValid([testUrl])] ?? {};
   final delay = currentDelayMap[state.proxyName];
