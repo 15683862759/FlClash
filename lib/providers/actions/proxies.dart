@@ -122,7 +122,6 @@ class ProxiesAction extends _$ProxiesAction {
 
   Future<void> updateGroups() async {
     try {
-      commonPrint.log('updateGroups');
       ref.read(groupsProvider.notifier).value = await retry(
         task: () async {
           final sortType = ref.read(
