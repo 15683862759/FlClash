@@ -126,6 +126,11 @@
           "type": "fix",
           "entries": [
             {
+              "id": "f7fe00c",
+              "scope": "changelog",
+              "text": "Fall back to release commit when the boundary tag is missing"
+            },
+            {
               "id": "7a8788c",
               "scope": "core,dart",
               "text": "Align proxy snapshot and route builds"

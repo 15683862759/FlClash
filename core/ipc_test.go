@@ -131,6 +131,7 @@ func swapConn(next ipcConn) ipcConn {
 
 func captureFrames(t *testing.T, run func()) [][]byte {
 	t.Helper()
+	settleMessageBatcher()
 	fake := &fakeConn{}
 	previous := swapConn(fake)
 	defer swapConn(previous)

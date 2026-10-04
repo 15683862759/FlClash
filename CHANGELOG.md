@@ -29,6 +29,7 @@
 
 **Bug Fixes**
 
+- **changelog** Fall back to release commit when the boundary tag is missing (f7fe00c)
 - **core,dart** Align proxy snapshot and route builds (7a8788c)
 - **macos** Keep visible dashboard watching after activity change (2d1cb0f)
 - **providers** Return typed empty group list (4ef7cd0)
