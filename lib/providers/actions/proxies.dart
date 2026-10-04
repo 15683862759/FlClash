@@ -90,6 +90,44 @@ class ProxiesAction extends _$ProxiesAction {
     debouncer.call(FunctionTag.updateGroups, updateGroups, duration: duration);
   }
 
+  /// Re-sort existing groups with the current delay map — no Core getProxies.
+  /// Used after latency tests when sortType is delay.
+  void resortGroupsByDelayDebounce([Duration? duration]) {
+    debouncer.call(
+      FunctionTag.updateDelay,
+      resortGroupsByDelay,
+      duration: duration,
+    );
+  }
+
+  Future<void> resortGroupsByDelay() async {
+    final groups = ref.read(groupsProvider);
+    if (groups.isEmpty) {
+      return;
+    }
+    final sortType = ref.read(
+      proxiesStyleSettingProvider.select((state) => state.sortType),
+    );
+    if (sortType != ProxiesSortType.delay) {
+      return;
+    }
+    final delayMap = ref.read(delayDataSourceProvider);
+    final testUrl = ref.read(
+      appSettingProvider.select((state) => state.testUrl),
+    );
+    final selectedMap = ref.read(
+      currentProfileProvider.select((state) => state?.selectedMap ?? {}),
+    );
+    final next = computeSort(
+      groups: groups,
+      sortType: sortType,
+      delayMap: delayMap,
+      selectedMap: selectedMap,
+      defaultTestUrl: testUrl,
+    );
+    ref.read(groupsProvider.notifier).update((_) => next);
+  }
+
   void changeProxyDebounce(String groupName, String proxyName) {
     _pendingSelectedRollback.putIfAbsent(
       groupName,
