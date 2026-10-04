@@ -133,9 +133,21 @@ type ExternalProvider struct {
 	SubscriptionInfo *provider.SubscriptionInfo `json:"subscription-info"`
 }
 
+// ProxiesQuery is the optional host argument to getProxies.
+// Since is the generation from the last full (or merged) snapshot the host holds.
+type ProxiesQuery struct {
+	Since uint64 `json:"since"`
+}
+
+// ProxiesData is either a full tree or a selection-only delta.
+// Full==true carries All+Proxies; Full==false carries Selected only when
+// Since still matches Generation (large-subscription fast path).
 type ProxiesData struct {
-	Proxies map[string]any `json:"proxies"`
-	All     []string       `json:"all"`
+	Generation uint64            `json:"generation"`
+	Full       bool              `json:"full"`
+	Proxies    map[string]any    `json:"proxies,omitempty"`
+	All        []string          `json:"all,omitempty"`
+	Selected   map[string]string `json:"selected,omitempty"`
 }
 
 type nodeView struct {
@@ -153,6 +165,7 @@ const (
 	validateProxiesMethod          CoreMethod = "validateProxies"
 	updateConfigMethod             CoreMethod = "updateConfig"
 	getProxiesMethod               CoreMethod = "getProxies"
+	// kept for decode compatibility; hosts may still send bare getProxies
 	changeProxyMethod              CoreMethod = "changeProxy"
 	getTrafficMethod               CoreMethod = "getTraffic"
 	getTotalTrafficMethod          CoreMethod = "getTotalTraffic"
