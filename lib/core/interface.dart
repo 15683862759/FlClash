@@ -41,7 +41,7 @@ mixin CoreInterface {
 
   Future<String> setupConfig(SetupParams setupParams);
 
-  Future<ProxiesData> getProxies();
+  Future<ProxiesSnapshot> getProxies({int since = 0});
 
   Future<ChangeProxyResult> changeProxy(ChangeProxyParams changeProxyParams);
 
@@ -94,6 +94,23 @@ mixin CoreInterface {
   FutureOr<bool> closeConnections();
 
   FutureOr<bool> resetConnections();
+}
+
+
+/// Core getProxies response: full tree or selection-only delta for large
+/// subscriptions. [full] false means only [selected] is populated.
+class ProxiesSnapshot {
+  final int generation;
+  final bool full;
+  final ProxiesData data;
+  final Map<String, String> selected;
+
+  const ProxiesSnapshot({
+    required this.generation,
+    required this.full,
+    required this.data,
+    required this.selected,
+  });
 }
 
 abstract class CoreHandlerInterface with CoreInterface {
@@ -231,14 +248,43 @@ abstract class CoreHandlerInterface with CoreInterface {
   }
 
   @override
-  Future<ProxiesData> getProxies() async {
+  Future<ProxiesSnapshot> getProxies({int since = 0}) async {
     final data = await _invokeMethod<Map<String, dynamic>>(
       method: CoreMethod.getProxies,
+      arguments: <String, dynamic>{'since': since},
     );
-    return data != null
-        ? ProxiesData.fromJson(data)
-        : const ProxiesData(proxies: {}, all: []);
+    if (data == null) {
+      return const ProxiesSnapshot(
+        generation: 0,
+        full: true,
+        data: ProxiesData(proxies: {}, all: []),
+        selected: {},
+      );
+    }
+    final generation = (data['generation'] as num?)?.toInt() ?? 0;
+    final full = data['full'] as bool? ?? true;
+    final selectedRaw = data['selected'];
+    final selected = <String, String>{
+      if (selectedRaw is Map)
+        for (final e in selectedRaw.entries)
+          if (e.key is String && e.value != null) e.key as String: '${e.value}',
+    };
+    if (!full) {
+      return ProxiesSnapshot(
+        generation: generation,
+        full: false,
+        data: const ProxiesData(proxies: {}, all: []),
+        selected: selected,
+      );
+    }
+    return ProxiesSnapshot(
+      generation: generation,
+      full: true,
+      data: ProxiesData.fromJson(data),
+      selected: selected,
+    );
   }
+
 
   @override
   Future<ChangeProxyResult> changeProxy(
