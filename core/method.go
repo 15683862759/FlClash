@@ -210,8 +210,10 @@ var methodHandlers = map[CoreMethod]methodHandler{
 			response.success(text)
 		})
 	}),
-	getProxiesMethod: withoutArguments(func(response MethodResponse) {
-		response.success(handleGetProxies())
+	getProxiesMethod: withDefaults(func() *ProxiesQuery {
+		return &ProxiesQuery{}
+	}, func(params *ProxiesQuery, response MethodResponse) {
+		response.success(handleGetProxies(params.Since))
 	}),
 	changeProxyMethod: withArguments(func(params *ChangeProxyParams, response MethodResponse) {
 		safeGo(response, func() {
