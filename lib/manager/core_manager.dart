@@ -226,6 +226,9 @@ class _CoreContainerState extends ConsumerState<CoreManager>
 
   @override
   Future<void> onCrash(String message) async {
+    if (!mounted) {
+      return;
+    }
     if (ref.read(coreStatusProvider) != CoreStatus.connected) {
       return;
     }
