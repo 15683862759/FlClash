@@ -2,7 +2,17 @@
 
 ## v0.8.100 (2026-10-05)
 
-Internal improvements only.
+**Bug Fixes**
+
+- **core** Force full getProxies when delta arrives without a host cache (22e4825)
+- **core** Bump proxiesGeneration after provider update and side-load (e5d6211)
+- **core** Stringify loaded/crash event payloads before dispatch (3a6b598)
+- **core** Skip onCrash work when CoreManager is already unmounted (ae580a8)
+- **proxies** Notify CoreController cache after local group.now patch (db4c101)
+- **core** Keep _lastGroups in sync when patching group.now locally (ad07db0)
+- **core** Recursively encode nested proxy groups in getProxies (ad27378)
+- **core** Guard CoreManager handlers against unmounted ref (e5fbd6f)
+- **core** Dispatch Core events synchronously (101c5ed)
 
 ## v0.8.99 (2026-10-05)
 

@@ -6,7 +6,58 @@
       "tag": "v0.8.100",
       "date": "2026-10-05",
       "prerelease": false,
-      "groups": []
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "22e4825",
+              "scope": "core",
+              "text": "Force full getProxies when delta arrives without a host cache"
+            },
+            {
+              "id": "e5d6211",
+              "scope": "core",
+              "text": "Bump proxiesGeneration after provider update and side-load"
+            },
+            {
+              "id": "3a6b598",
+              "scope": "core",
+              "text": "Stringify loaded/crash event payloads before dispatch"
+            },
+            {
+              "id": "ae580a8",
+              "scope": "core",
+              "text": "Skip onCrash work when CoreManager is already unmounted"
+            },
+            {
+              "id": "db4c101",
+              "scope": "proxies",
+              "text": "Notify CoreController cache after local group.now patch"
+            },
+            {
+              "id": "ad07db0",
+              "scope": "core",
+              "text": "Keep _lastGroups in sync when patching group.now locally"
+            },
+            {
+              "id": "ad27378",
+              "scope": "core",
+              "text": "Recursively encode nested proxy groups in getProxies"
+            },
+            {
+              "id": "e5fbd6f",
+              "scope": "core",
+              "text": "Guard CoreManager handlers against unmounted ref"
+            },
+            {
+              "id": "101c5ed",
+              "scope": "core",
+              "text": "Dispatch Core events synchronously"
+            }
+          ]
+        }
+      ]
     },
     {
       "version": "0.8.99",
