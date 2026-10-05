@@ -385,6 +385,7 @@ void main() {
 
     expect(find.text('core failure'), findsOneWidget);
 
+    await tester.pump(const Duration(seconds: 3));
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
