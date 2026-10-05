@@ -81,10 +81,10 @@ class CoreEventManager {
             );
             break;
           case CoreEventType.loaded:
-            listener.onLoaded(event.data);
+            listener.onLoaded('${event.data}');
             break;
           case CoreEventType.crash:
-            listener.onCrash(event.data);
+            listener.onCrash('${event.data}');
             break;
           case CoreEventType.geoUpdate:
             final data = Map<String, dynamic>.from(event.data as Map);
