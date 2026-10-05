@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -45,55 +43,7 @@ abstract mixin class CoreEventListener {
 }
 
 class CoreEventManager {
-  final _controller = StreamController<CoreEvent>();
-
-  CoreEventManager._() {
-    _controller.stream.listen((event) {
-      for (final CoreEventListener listener in List.of(_listeners)) {
-        try {
-          switch (event.type) {
-            case CoreEventType.log:
-              listener.onLog(Log.fromJson(event.data));
-              break;
-            case CoreEventType.delay:
-              listener.onDelay(Delay.fromJson(event.data));
-              break;
-            case CoreEventType.request:
-              listener.onRequest(TrackerInfo.fromJson(event.data));
-              break;
-            case CoreEventType.dns:
-              listener.onDns(DnsQuery.fromJson(event.data));
-              break;
-            case CoreEventType.loaded:
-              listener.onLoaded(event.data);
-              break;
-            case CoreEventType.crash:
-              listener.onCrash(event.data);
-              break;
-            case CoreEventType.geoUpdate:
-              final data = event.data as Map<String, dynamic>;
-              listener.onGeoUpdate(
-                data['type'] as String,
-                data['updating'] as bool,
-                data['skipped'] as bool? ?? false,
-                data['error'] as String?,
-              );
-              break;
-            case CoreEventType.routeChanged:
-              listener.onRouteChanged(
-                RouteSnapshot.fromJson(Map<String, Object?>.from(event.data)),
-              );
-              break;
-          }
-        } catch (error) {
-          commonPrint.log(
-            'Unable to dispatch Core event ${event.type.name}: $error',
-            logLevel: LogLevel.error,
-          );
-        }
-      }
-    });
-  }
+  CoreEventManager._();
 
   static final CoreEventManager instance = CoreEventManager._();
 
@@ -104,8 +54,62 @@ class CoreEventManager {
     return _listeners.isNotEmpty;
   }
 
+  /// Dispatches on the calling stack so a disposed listener is not hit by a
+  /// late Stream microtask after the widget tree is already torn down.
   void sendEvent(CoreEvent event) {
-    _controller.add(event);
+    for (final CoreEventListener listener in List.of(_listeners)) {
+      try {
+        switch (event.type) {
+          case CoreEventType.log:
+            listener.onLog(
+              Log.fromJson(Map<String, Object?>.from(event.data as Map)),
+            );
+            break;
+          case CoreEventType.delay:
+            listener.onDelay(
+              Delay.fromJson(Map<String, Object?>.from(event.data as Map)),
+            );
+            break;
+          case CoreEventType.request:
+            listener.onRequest(
+              TrackerInfo.fromJson(Map<String, Object?>.from(event.data as Map)),
+            );
+            break;
+          case CoreEventType.dns:
+            listener.onDns(
+              DnsQuery.fromJson(Map<String, Object?>.from(event.data as Map)),
+            );
+            break;
+          case CoreEventType.loaded:
+            listener.onLoaded(event.data);
+            break;
+          case CoreEventType.crash:
+            listener.onCrash(event.data);
+            break;
+          case CoreEventType.geoUpdate:
+            final data = Map<String, dynamic>.from(event.data as Map);
+            listener.onGeoUpdate(
+              data['type'] as String,
+              data['updating'] as bool,
+              data['skipped'] as bool? ?? false,
+              data['error'] as String?,
+            );
+            break;
+          case CoreEventType.routeChanged:
+            listener.onRouteChanged(
+              RouteSnapshot.fromJson(
+                Map<String, Object?>.from(event.data as Map),
+              ),
+            );
+            break;
+        }
+      } catch (error) {
+        commonPrint.log(
+          'Unable to dispatch Core event ${event.type.name}: $error',
+          logLevel: LogLevel.error,
+        );
+      }
+    }
   }
 
   void addListener(CoreEventListener listener) {
