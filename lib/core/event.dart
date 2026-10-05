@@ -72,7 +72,9 @@ class CoreEventManager {
             break;
           case CoreEventType.request:
             listener.onRequest(
-              TrackerInfo.fromJson(Map<String, Object?>.from(event.data as Map)),
+              TrackerInfo.fromJson(
+                Map<String, Object?>.from(event.data as Map),
+              ),
             );
             break;
           case CoreEventType.dns:
