@@ -319,19 +319,20 @@ void main() {
       await setup.setRunning(true);
       expect(trafficUpdates(), 1);
 
+      // Visible ticker is 1.5s (not 1s) to cut IPC; two seconds yield one tick.
       await tester.pump(const Duration(seconds: 2));
-      expect(trafficUpdates(), 3);
+      expect(trafficUpdates(), 2);
 
       setVisible(false);
       await tester.pump(const Duration(seconds: 5));
-      expect(trafficUpdates(), 3);
+      expect(trafficUpdates(), 2);
       expect(scoped.read(isStartProvider), isTrue);
 
       setVisible(true);
       await tester.pump();
+      expect(trafficUpdates(), 3);
+      await tester.pump(const Duration(milliseconds: 1500));
       expect(trafficUpdates(), 4);
-      await tester.pump(const Duration(seconds: 1));
-      expect(trafficUpdates(), 5);
 
       await setup.setRunning(false);
     });
