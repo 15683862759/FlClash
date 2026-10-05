@@ -265,6 +265,9 @@ void main() {
 
     Tray.instance.resetForTesting();
     calls.clear();
+    // AppTray keeps a fingerprint of the last show; a fresh instance is
+    // required or the second update skips the platform call entirely.
+    tray = AppTray.forPlatform(isMacOS: true, isWindows: false);
 
     await update(_trayState());
     final second = _items(showCall()).map((item) => item['id']).toList();
