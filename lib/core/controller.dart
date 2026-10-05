@@ -141,6 +141,19 @@ class CoreController {
     _lastGroups = null;
   }
 
+  /// Keep the delta cache in sync when the UI patches group.now without a
+  /// full getProxies (e.g. after a successful changeProxy).
+  void patchCachedGroupNow(String groupName, String proxyName) {
+    final groups = _lastGroups;
+    if (groups == null || groups.isEmpty) {
+      return;
+    }
+    _lastGroups = [
+      for (final group in groups)
+        if (group.name == groupName) group.copyWith(now: proxyName) else group,
+    ];
+  }
+
   Future<List<Group>> getProxiesGroups({
     required ProxiesSortType sortType,
     required DelayMap delayMap,
