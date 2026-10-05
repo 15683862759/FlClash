@@ -162,7 +162,7 @@ class CoreController {
     bool forceFull = false,
   }) async {
     final since = forceFull ? 0 : _proxiesGeneration;
-    final snapshot = await _interface.getProxies(since: since);
+    var snapshot = await _interface.getProxies(since: since);
 
     // Selection-only delta: patch "now" on the last groups list and re-sort
     // in-process — no isolate, no Group.fromJson over thousands of leaves.
@@ -192,6 +192,12 @@ class CoreController {
       );
       _lastGroups = sorted;
       return sorted;
+    }
+
+    // Core thinks we already hold the tree (generation matched) but the host
+    // cache is gone — force a full snapshot instead of building empty groups.
+    if (!snapshot.full) {
+      snapshot = await _interface.getProxies(since: 0);
     }
 
     final proxiesData = _mergeSelectedIntoProxies(
