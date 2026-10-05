@@ -777,6 +777,8 @@ func handleUpdateExternalProvider(providerName string) *MethodError {
 		}
 		return providerMethodError("provider_update_error", providerName, err)
 	}
+	// Tree members may change; force hosts off the selection-only path.
+	bumpProxiesGeneration()
 	refreshRoute()
 	return nil
 }
@@ -802,6 +804,7 @@ func handleSideLoadExternalProvider(providerName string, data []byte) *MethodErr
 	if err := sideUpdateExternalProvider(p, data); err != nil {
 		return providerMethodError("provider_update_error", providerName, err)
 	}
+	bumpProxiesGeneration()
 	refreshRoute()
 	return nil
 }
