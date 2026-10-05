@@ -235,27 +235,12 @@ func handleGetProxies(since uint64) ProxiesData {
 		return p.Type(), true
 	})
 
-	// Only encode groups and the members they reference. A large provider can
-	// leave hundreds of unused nodes in AllProxies that the host never shows.
+	// Encode each top-level group and every reachable member (including
+	// nested groups). A one-level walk drops leaves that only appear under
+	// another group, which breaks Group.fromJson member resolution.
 	views := make(map[string]any, len(allNames)*4)
 	for _, groupName := range allNames {
-		p, ok := proxies[groupName]
-		if !ok || p == nil {
-			continue
-		}
-		view := proxyView(p)
-		views[groupName] = view
-		memberNames := proxyViewMemberNames(view)
-		for _, memberName := range memberNames {
-			if _, exists := views[memberName]; exists {
-				continue
-			}
-			mp, ok := proxies[memberName]
-			if !ok || mp == nil {
-				continue
-			}
-			views[memberName] = proxyView(mp)
-		}
+		encodeProxyClosure(proxies, views, groupName)
 	}
 	return ProxiesData{
 		Generation: gen,
@@ -263,6 +248,29 @@ func handleGetProxies(since uint64) ProxiesData {
 		All:        allNames,
 		Proxies:    views,
 		Selected:   selected,
+	}
+}
+
+// encodeProxyClosure writes name and, when it is a group, every member name
+// reachable from it. Already-seen names are skipped to keep nested graphs finite.
+func encodeProxyClosure(proxies map[string]constant.Proxy, views map[string]any, name string) {
+	if name == "" {
+		return
+	}
+	if _, exists := views[name]; exists {
+		return
+	}
+	p, ok := proxies[name]
+	if !ok || p == nil {
+		return
+	}
+	view := proxyView(p)
+	views[name] = view
+	if !isProxyGroupType(p.Type()) {
+		return
+	}
+	for _, memberName := range proxyViewMemberNames(view) {
+		encodeProxyClosure(proxies, views, memberName)
 	}
 }
 
