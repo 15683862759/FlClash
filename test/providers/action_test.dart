@@ -553,7 +553,8 @@ void main() {
 
         final startFuture = action.setRunning(true);
         final initialRunTime = container.read(runTimeProvider)!;
-        await Future<void>.delayed(const Duration(milliseconds: 1100));
+        // Visible ticker is 1.5s; wait past one period for the second traffic read.
+        await Future<void>.delayed(const Duration(milliseconds: 1600));
 
         expect(container.read(runTimeProvider), greaterThan(initialRunTime));
         expect(commonAction.updateTrafficCount, greaterThanOrEqualTo(2));
