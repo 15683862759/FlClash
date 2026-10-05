@@ -455,6 +455,9 @@ void main() {
 
     await tester.tap(find.text(currentAppLocalizations.confirm));
     await tester.pumpAndSettle();
+    // updateProvider retries with a short backoff; drain so the suite does
+    // not end with a pending FakeTimer.
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('offers edit only for providers backed by a text file', (
