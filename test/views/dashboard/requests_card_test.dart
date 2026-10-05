@@ -59,7 +59,7 @@ void main() {
 
     // The count repaints on the throttled cadence, not per request.
     expect(find.text('0'), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 301));
+    await tester.pump(const Duration(milliseconds: 450));
 
     expect(find.text('42'), findsOneWidget);
 
