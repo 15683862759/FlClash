@@ -18,6 +18,7 @@ env:
   FLUTTER_VERSION: '3.47.4'
   GO_VERSION: '1.26.4'
   NDK_VERSION: r28c
+  GOPROXY: 'https://goproxy.cn,https://proxy.golang.org,direct'
 
 jobs:
   dart:
