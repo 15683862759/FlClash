@@ -12,13 +12,17 @@ RUN_ID = os.getenv("RUN_ID")
 IS_STABLE = "-" not in TAG
 
 CHAT_ID = "@FlClash"
-API_URL = f"http://localhost:8081/bot{TELEGRAM_BOT_TOKEN}/sendMediaGroup"
+API_URL = os.getenv("TELEGRAM_API_URL", f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMediaGroup")
 
 DIST_DIR = os.path.join(os.getcwd(), "dist")
 # Rendered by `tool/changelog.dart render telegram`: plain bullets, already
 # truncated to fit the caption limit. release.md carries the download table and
 # would blow past that limit.
 release = os.path.join(os.getcwd(), "telegram.md")
+
+if not TELEGRAM_BOT_TOKEN:
+    print("No TELEGRAM_BOT_TOKEN; skipping Telegram post.")
+    sys.exit(0)
 
 text = ""
 

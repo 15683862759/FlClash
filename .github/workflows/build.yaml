@@ -467,14 +467,6 @@ jobs:
         github.repository == '15683862759/FlClash') &&
       startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    services:
-      telegram-bot-api:
-        image: aiogram/telegram-bot-api:latest
-        env:
-          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
-          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-        ports:
-          - 8081:8081
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -523,6 +515,10 @@ jobs:
           TAG: ${{ github.ref_name }}
           RUN_ID: ${{ github.run_id }}
         run: |
+          if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
+            echo 'No TELEGRAM_BOT_TOKEN secret; skipping Telegram post.'
+            exit 0
+          fi
           python -m pip install --upgrade pip
           pip install requests
           python release_telegram.py
