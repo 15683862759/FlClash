@@ -152,10 +152,15 @@ class _CoreContainerState extends ConsumerState<CoreManager>
       _bufferedLogs.removeRange(0, _bufferedLogs.length - _maxBufferedLogs);
     }
     _scheduleFeedFlush();
-    if (log.logLevel == LogLevel.error) {
+    if (log.logLevel == LogLevel.error && mounted) {
       throttler.call(
         FunctionTag.coreErrorNotifier,
-        () => dialogs.showNotifier(log.payload, level: MessageLevel.error),
+        () {
+          if (!mounted) {
+            return;
+          }
+          dialogs.showNotifier(log.payload, level: MessageLevel.error);
+        },
         duration: const Duration(seconds: 3),
         fire: true,
       );
@@ -165,6 +170,9 @@ class _CoreContainerState extends ConsumerState<CoreManager>
 
   @override
   void onRequest(TrackerInfo trackerInfo) async {
+    if (!mounted) {
+      return;
+    }
     // Connections history is only useful while the UI is visible; dropping
     // events in the background avoids FixedList rebuild storms on busy links.
     if (ref.read(appVisibleProvider)) {
@@ -183,6 +191,9 @@ class _CoreContainerState extends ConsumerState<CoreManager>
 
   @override
   void onDns(DnsQuery dnsQuery) {
+    if (!mounted) {
+      return;
+    }
     if (ref.read(appVisibleProvider)) {
       _bufferedDns.add(dnsQuery);
       if (_bufferedDns.length > _maxBufferedDns) {
@@ -227,6 +238,9 @@ class _CoreContainerState extends ConsumerState<CoreManager>
 
   @override
   void onGeoUpdate(String geoType, bool updating, bool skipped, String? error) {
+    if (!mounted) {
+      return;
+    }
     ref
         .read(geoResourceActionProvider.notifier)
         .handleCoreUpdate(geoType, updating, skipped, error);
@@ -235,6 +249,9 @@ class _CoreContainerState extends ConsumerState<CoreManager>
 
   @override
   void onRouteChanged(RouteSnapshot snapshot) {
+    if (!mounted) {
+      return;
+    }
     ref.read(routeTrackerProvider.notifier).applySnapshot(snapshot);
     super.onRouteChanged(snapshot);
   }
