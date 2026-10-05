@@ -273,6 +273,8 @@ void main() {
       ),
     );
     await tester.pump();
+    // CoreManager batches feeds on renderThrottleDuration (400ms).
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(
       container.read(logsProvider).list.map((log) => log.payload),
@@ -301,6 +303,7 @@ void main() {
       );
     }
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(
       container.read(dnsQueriesProvider).list.map((query) => query.domain),
@@ -325,11 +328,13 @@ void main() {
 
     coreEventManager.sendEvent(_geoUpdate(updating: true));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(container.read(isUpdatingProvider(key)), isTrue);
 
     coreEventManager.sendEvent(_geoUpdate(error: 'background failure'));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(container.read(isUpdatingProvider(key)), isFalse);
     expect(find.text('background failure'), findsNothing);
@@ -352,6 +357,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     final route = container.read(routeTrackerProvider);
     expect(route.coreEpoch, 7);
@@ -375,6 +381,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('core failure'), findsOneWidget);
 
