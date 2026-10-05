@@ -161,6 +161,8 @@ class ProxiesAction extends _$ProxiesAction {
                         group,
                   ],
                 );
+            // Keep CoreController delta cache aligned with the UI list.
+            _core.patchCachedGroupNow(groupName, proxyName);
           }
         }
       },
