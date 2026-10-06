@@ -2,6 +2,44 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.101",
+      "tag": "v0.8.101",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "4125d0a",
+              "scope": "connectivity",
+              "text": "Avoid redundant route probes on network changes"
+            }
+          ]
+        },
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "9f59367",
+              "scope": "database",
+              "text": "Improve database write responsiveness"
+            },
+            {
+              "id": "67fd0df",
+              "scope": "proxies",
+              "text": "Faster proxy list updates and node switching"
+            },
+            {
+              "id": "2aaaf47",
+              "scope": "core",
+              "text": "Reduce Core event dispatch and buffering overhead"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.100",
       "tag": "v0.8.100",
       "date": "2026-10-05",

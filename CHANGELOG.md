@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.101 (2026-10-07)
+
+**Bug Fixes**
+
+- **connectivity** Avoid redundant route probes on network changes (4125d0a)
+
+**Performance**
+
+- **database** Improve database write responsiveness (9f59367)
+- **proxies** Faster proxy list updates and node switching (67fd0df)
+- **core** Reduce Core event dispatch and buffering overhead (2aaaf47)
+
 ## v0.8.100 (2026-10-05)
 
 **Bug Fixes**
