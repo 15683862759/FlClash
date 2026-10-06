@@ -221,6 +221,36 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('ConnectionsView keeps polling while the app is inactive', (
+    tester,
+  ) async {
+    var readCount = 0;
+
+    Future<List<TrackerInfo>> readConnections() async {
+      readCount++;
+      return const [];
+    }
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await pumpConnections(tester, connectionsReader: readConnections);
+    await tester.pump();
+
+    expect(readCount, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump(const Duration(milliseconds: 2500));
+
+    expect(readCount, 2);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump(const Duration(seconds: 4));
+
+    expect(readCount, 2);
+    expect(tester.takeException(), null);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
 
 class _TestApp extends StatelessWidget {

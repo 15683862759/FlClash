@@ -23,13 +23,17 @@ mixin ActivePollingMixin<T extends StatefulWidget>
 
   bool get canPoll => mounted && _isForeground && _isPageActive;
 
+  bool _isForegroundState(AppLifecycleState? state) =>
+      state == null ||
+      state == AppLifecycleState.resumed ||
+      state == AppLifecycleState.inactive;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
-    _isForeground =
-        lifecycleState == null || lifecycleState == AppLifecycleState.resumed;
+    _isForeground = _isForegroundState(lifecycleState);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _syncPolling();
@@ -51,7 +55,7 @@ mixin ActivePollingMixin<T extends StatefulWidget>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    final isForeground = state == AppLifecycleState.resumed;
+    final isForeground = _isForegroundState(state);
     if (_isForeground == isForeground) {
       return;
     }
