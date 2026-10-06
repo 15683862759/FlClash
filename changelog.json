@@ -2,6 +2,84 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.103",
+      "tag": "v0.8.103",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "d64b66b",
+              "scope": "proxies",
+              "text": "Avoid rebuilding groups when every proxy matches"
+            },
+            {
+              "id": "c7eddac",
+              "scope": "config",
+              "text": "Skip rewriting unchanged configuration"
+            },
+            {
+              "id": "c1b356e",
+              "scope": "proxies",
+              "text": "Reuse normalized proxy search text across queries"
+            },
+            {
+              "id": "f4826f4",
+              "scope": "startup",
+              "text": "Start migration reads in parallel"
+            },
+            {
+              "id": "b7dd961",
+              "scope": "ui",
+              "text": "Stop repeated writes for unchanged view sizes"
+            },
+            {
+              "id": "5258d39",
+              "scope": "startup",
+              "text": "Read boot recovery probes concurrently"
+            },
+            {
+              "id": "127c909",
+              "scope": "startup",
+              "text": "Start dynamic color probes in parallel"
+            },
+            {
+              "id": "cb56f67",
+              "scope": "ui",
+              "text": "Avoid redundant sidebar layout writes"
+            },
+            {
+              "id": "f466bfb",
+              "scope": "startup",
+              "text": "Avoid an empty first frame during startup"
+            },
+            {
+              "id": "d349b4b",
+              "scope": "core",
+              "text": "Stop request and DNS event delivery while hidden"
+            },
+            {
+              "id": "09c0630",
+              "scope": "ui",
+              "text": "Pause icon prefetching while the app is hidden"
+            },
+            {
+              "id": "9ac2a2c",
+              "scope": "tray",
+              "text": "Reduce macOS tray delay menu rebuilds"
+            },
+            {
+              "id": "8d79e58",
+              "scope": "app",
+              "text": "Schedule profile updates only when they are due"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.102",
       "tag": "v0.8.102",
       "date": "2026-10-07",

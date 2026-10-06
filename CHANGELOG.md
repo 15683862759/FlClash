@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.8.103 (2026-10-07)
+
+**Performance**
+
+- **proxies** Avoid rebuilding groups when every proxy matches (d64b66b)
+- **config** Skip rewriting unchanged configuration (c7eddac)
+- **proxies** Reuse normalized proxy search text across queries (c1b356e)
+- **startup** Start migration reads in parallel (f4826f4)
+- **ui** Stop repeated writes for unchanged view sizes (b7dd961)
+- **startup** Read boot recovery probes concurrently (5258d39)
+- **startup** Start dynamic color probes in parallel (127c909)
+- **ui** Avoid redundant sidebar layout writes (cb56f67)
+- **startup** Avoid an empty first frame during startup (f466bfb)
+- **core** Stop request and DNS event delivery while hidden (d349b4b)
+- **ui** Pause icon prefetching while the app is hidden (09c0630)
+- **tray** Reduce macOS tray delay menu rebuilds (9ac2a2c)
+- **app** Schedule profile updates only when they are due (8d79e58)
+
 ## v0.8.102 (2026-10-07)
 
 **Bug Fixes**
