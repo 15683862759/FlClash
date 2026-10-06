@@ -10,6 +10,7 @@ import 'package:fl_clash/icons/icons.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/manager/hotkey_manager.dart';
 import 'package:fl_clash/manager/manager.dart';
+import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/plugins/app.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
@@ -64,6 +65,28 @@ const _actionIconTheme = ActionIconThemeData(
   closeButtonIconBuilder: _closeButtonIcon,
 );
 
+Duration? nextProfileAutoUpdateDelay(Iterable<Profile> profiles, DateTime now) {
+  Duration? next;
+  for (final profile in profiles) {
+    if (!profile.realAutoUpdate) {
+      continue;
+    }
+    final lastUpdateDate = profile.lastUpdateDate;
+    if (lastUpdateDate == null) {
+      return Duration.zero;
+    }
+    final dueAt = lastUpdateDate.add(profile.autoUpdateDuration);
+    if (!dueAt.isAfter(now)) {
+      return Duration.zero;
+    }
+    final delay = dueAt.difference(now);
+    if (next == null || delay < next) {
+      next = delay;
+    }
+  }
+  return next;
+}
+
 Widget _backButtonIcon(BuildContext context) =>
     GlyphIcon(AppGlyphs.backFor(Theme.of(context).platform));
 
@@ -90,6 +113,9 @@ class ApplicationState extends ConsumerState<Application> {
   @override
   void initState() {
     super.initState();
+    ref.listenManual(profilesProvider, (_, _) {
+      _scheduleAutoUpdateProfilesTask();
+    });
     SystemNavigator.setFrameworkHandlesBack(true);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       if (globalState.navigatorKey.currentContext != null) {
@@ -97,7 +123,7 @@ class ApplicationState extends ConsumerState<Application> {
       } else {
         exit(0);
       }
-      _autoUpdateProfilesTask();
+      _scheduleAutoUpdateProfilesTask();
       _initLink();
       if (!safeModeBuild) {
         unawaited(app?.initShortcuts());
@@ -134,14 +160,39 @@ class ApplicationState extends ConsumerState<Application> {
     });
   }
 
-  void _autoUpdateProfilesTask() {
-    _autoUpdateProfilesTaskTimer = Timer(const Duration(minutes: 20), () async {
-      await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
-      if (!mounted) {
-        return;
-      }
-      _autoUpdateProfilesTask();
-    });
+  void _scheduleAutoUpdateProfilesTask({Duration? minimumDelay}) {
+    _autoUpdateProfilesTaskTimer?.cancel();
+    _autoUpdateProfilesTaskTimer = null;
+    final delay = nextProfileAutoUpdateDelay(
+      ref.read(profilesProvider),
+      DateTime.now(),
+    );
+    if (delay == null) {
+      return;
+    }
+    final effectiveDelay = minimumDelay != null && delay < minimumDelay
+        ? minimumDelay
+        : delay;
+    _autoUpdateProfilesTaskTimer = Timer(
+      effectiveDelay,
+      () => unawaited(_runAutoUpdateProfilesTask()),
+    );
+  }
+
+  Future<void> _runAutoUpdateProfilesTask() async {
+    final hadDueProfile =
+        nextProfileAutoUpdateDelay(
+          ref.read(profilesProvider),
+          DateTime.now(),
+        ) ==
+        Duration.zero;
+    await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
+    if (!mounted) {
+      return;
+    }
+    _scheduleAutoUpdateProfilesTask(
+      minimumDelay: hadDueProfile ? const Duration(minutes: 5) : null,
+    );
   }
 
   Future<void> _handleConnectivityChanged(
