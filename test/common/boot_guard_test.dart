@@ -106,6 +106,27 @@ void main() {
     await run;
   });
 
+  test('probe and record write failures do not block startup', () async {
+    final guard = BootGuard(
+      supported: true,
+      readRecord: () async => throw StateError('record unavailable'),
+      writeRecord: (_) async => throw StateError('store unavailable'),
+      readExitInfo: () async => throw StateError('exit info unavailable'),
+      readCrashReport: () async => throw StateError('crash probe unavailable'),
+      now: () => 5000,
+    );
+
+    final decision = await guard.evaluate(
+      profileId: 7,
+      crashlyticsEnabled: true,
+    );
+    await guard.markRunning();
+    await guard.markClosed();
+
+    expect(decision.recovery, BootRecovery.none);
+    expect(guard.decision.recovery, BootRecovery.none);
+  });
+
   test('an interrupted launch is carried into the next boot record', () async {
     final store = _RecordStore()
       ..record = const BootRecord(
