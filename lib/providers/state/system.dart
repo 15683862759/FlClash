@@ -84,6 +84,10 @@ Map<String, Map<String, int>> trayDelays(Ref ref) {
     appSettingProvider.select((state) => state.testUrl),
   );
   final delays = <String, Map<String, int>>{};
+  final groupsByName = <String, Group>{};
+  for (final group in allGroups) {
+    groupsByName.putIfAbsent(group.name, () => group);
+  }
   final realStates = <String, SelectedProxyState>{};
   for (final group in groups) {
     final testUrl = group.testUrl.takeFirstValid([defaultTestUrl]);
@@ -93,6 +97,7 @@ Map<String, Map<String, int>> trayDelays(Ref ref) {
         proxyName: proxy.name,
         testUrl: testUrl,
         groups: allGroups,
+        groupsByName: groupsByName,
         selectedMap: selectedMap,
         delayMap: delayMap,
         realState: realStates.putIfAbsent(
@@ -100,6 +105,7 @@ Map<String, Map<String, int>> trayDelays(Ref ref) {
           () => computeRealSelectedProxyState(
             proxy.name,
             groups: allGroups,
+            groupsByName: groupsByName,
             selectedMap: selectedMap,
           ),
         ),
