@@ -303,6 +303,22 @@ var methodHandlers = map[CoreMethod]methodHandler{
 		handleStopLog()
 		response.success(true)
 	}),
+	startRequestMessagesMethod: withoutArguments(func(response MethodResponse) {
+		handleStartRequestMessages()
+		response.success(true)
+	}),
+	stopRequestMessagesMethod: withoutArguments(func(response MethodResponse) {
+		handleStopRequestMessages()
+		response.success(true)
+	}),
+	startDnsMessagesMethod: withoutArguments(func(response MethodResponse) {
+		handleStartDnsMessages()
+		response.success(true)
+	}),
+	stopDnsMessagesMethod: withoutArguments(func(response MethodResponse) {
+		handleStopDnsMessages()
+		response.success(true)
+	}),
 	startListenerMethod: withoutArguments(func(response MethodResponse) {
 		response.success(handleStartListener())
 	}),

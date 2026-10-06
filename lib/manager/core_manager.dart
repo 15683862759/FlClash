@@ -27,6 +27,8 @@ class _CoreContainerState extends ConsumerState<CoreManager>
     with CoreEventListener {
   CoreController get _core => ref.read(coreHandlerProvider);
 
+  late final CoreController _coreController;
+
   Timer? _feedFlushTimer;
   final ListQueue<Log> _bufferedLogs = ListQueue();
   final ListQueue<TrackerInfo> _bufferedRequests = ListQueue();
@@ -59,6 +61,7 @@ class _CoreContainerState extends ConsumerState<CoreManager>
   @override
   void initState() {
     super.initState();
+    _coreController = _core;
     _logsNotifier = ref.read(logsProvider.notifier);
     _requestsNotifier = ref.read(requestsProvider.notifier);
     _dnsNotifier = ref.read(dnsQueriesProvider.notifier);
@@ -94,12 +97,30 @@ class _CoreContainerState extends ConsumerState<CoreManager>
       syncLogSubscription,
       fireImmediately: true,
     );
+
+    void syncFeedSubscription(_, _) {
+      if (ref.read(appVisibleProvider)) {
+        _core.startRequestMessages();
+        _core.startDnsMessages();
+      } else {
+        _core.stopRequestMessages();
+        _core.stopDnsMessages();
+      }
+    }
+
+    ref.listenManual(
+      appVisibleProvider,
+      syncFeedSubscription,
+      fireImmediately: true,
+    );
   }
 
   @override
   void dispose() {
     _feedFlushTimer?.cancel();
     _flushFeeds();
+    _coreController.stopRequestMessages();
+    _coreController.stopDnsMessages();
     coreEventManager.removeListener(this);
     super.dispose();
   }

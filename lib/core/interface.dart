@@ -81,6 +81,14 @@ mixin CoreInterface {
 
   FutureOr<void> stopLog();
 
+  FutureOr<void> startRequestMessages();
+
+  FutureOr<void> stopRequestMessages();
+
+  FutureOr<void> startDnsMessages();
+
+  FutureOr<void> stopDnsMessages();
+
   Future<bool> crash();
 
   FutureOr<List<TrackerInfo>> getConnections();
@@ -460,6 +468,26 @@ abstract class CoreHandlerInterface with CoreInterface {
   @override
   FutureOr<void> stopLog() {
     _invokeMethod<bool>(method: CoreMethod.stopLog);
+  }
+
+  @override
+  FutureOr<void> startRequestMessages() {
+    _invokeMethod(method: CoreMethod.startRequestMessages);
+  }
+
+  @override
+  FutureOr<void> stopRequestMessages() {
+    _invokeMethod<bool>(method: CoreMethod.stopRequestMessages);
+  }
+
+  @override
+  FutureOr<void> startDnsMessages() {
+    _invokeMethod(method: CoreMethod.startDnsMessages);
+  }
+
+  @override
+  FutureOr<void> stopDnsMessages() {
+    _invokeMethod<bool>(method: CoreMethod.stopDnsMessages);
   }
 
   @override

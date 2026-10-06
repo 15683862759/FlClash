@@ -969,16 +969,20 @@ func init() {
 	}
 	statistic.DefaultRequestNotify = func(c statistic.Tracker) {
 		notifyProbeRoute(c)
-		sendMessage(Message{
-			Type: RequestMessage,
-			Data: c,
-		})
+		if messageInterestEnabled(RequestMessage) {
+			sendMessage(Message{
+				Type: RequestMessage,
+				Data: c,
+			})
+		}
 	}
 	dns.DefaultQueryNotify = func(record dns.QueryRecord) {
-		sendMessage(Message{
-			Type: DnsMessage,
-			Data: newDnsQuery(record),
-		})
+		if messageInterestEnabled(DnsMessage) {
+			sendMessage(Message{
+				Type: DnsMessage,
+				Data: newDnsQuery(record),
+			})
+		}
 	}
 	executor.DefaultProviderLoadedHook = func(providerName string) {
 		bumpProxiesGeneration()
