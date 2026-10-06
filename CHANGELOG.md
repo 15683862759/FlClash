@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.8.105 (2026-10-07)
+
+**Performance**
+
+- **ui** Narrow navigation setting watches (6e76931)
+- **core** Drop buffered feeds when hidden (c78a473)
+- **icons** Coalesce concurrent prefetches (6006023)
+- **profiles** Coalesce concurrent auto updates (5ff5e31)
+- **startup** Skip unused dynamic color probe (0008e7d)
+- **proxies** Keep equal-delay order stable (789cc7e)
+- **providers** Skip unchanged group publishes (088ca66)
+- **proxies** Build proxy rows without chunk lists (5cf5986)
+
 ## v0.8.104 (2026-10-07)
 
 **Bug Fixes**

@@ -2,6 +2,59 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.105",
+      "tag": "v0.8.105",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "6e76931",
+              "scope": "ui",
+              "text": "Narrow navigation setting watches"
+            },
+            {
+              "id": "c78a473",
+              "scope": "core",
+              "text": "Drop buffered feeds when hidden"
+            },
+            {
+              "id": "6006023",
+              "scope": "icons",
+              "text": "Coalesce concurrent prefetches"
+            },
+            {
+              "id": "5ff5e31",
+              "scope": "profiles",
+              "text": "Coalesce concurrent auto updates"
+            },
+            {
+              "id": "0008e7d",
+              "scope": "startup",
+              "text": "Skip unused dynamic color probe"
+            },
+            {
+              "id": "789cc7e",
+              "scope": "proxies",
+              "text": "Keep equal-delay order stable"
+            },
+            {
+              "id": "088ca66",
+              "scope": "providers",
+              "text": "Skip unchanged group publishes"
+            },
+            {
+              "id": "5cf5986",
+              "scope": "proxies",
+              "text": "Build proxy rows without chunk lists"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.104",
       "tag": "v0.8.104",
       "date": "2026-10-07",
