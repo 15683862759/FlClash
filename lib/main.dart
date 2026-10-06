@@ -16,6 +16,20 @@ void main(List<String> args) {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      final views = WidgetsBinding.instance.platformDispatcher.views;
+      final view = views.isEmpty ? null : views.first;
+      final pixelRatio = view?.devicePixelRatio;
+      final physicalSize = view?.physicalSize;
+      final viewSize =
+          pixelRatio == null ||
+              pixelRatio == 0 ||
+              physicalSize == null ||
+              physicalSize.isEmpty
+          ? Size.zero
+          : Size(
+              physicalSize.width / pixelRatio,
+              physicalSize.height / pixelRatio,
+            );
       if (Platform.isLinux) {
         linkManager.seedInitialLink(args);
       }
@@ -30,7 +44,7 @@ void main(List<String> args) {
       try {
         await RustLib.init();
         final version = await system.init();
-        final container = await bootstrap.init(version);
+        final container = await bootstrap.init(version, viewSize: viewSize);
         HttpOverrides.global = FlClashHttpOverrides(container);
         request.attach(container.read);
         runApp(
