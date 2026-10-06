@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.8.104 (2026-10-07)
+
+**Bug Fixes**
+
+- **boot** Keep storage failures non-fatal (25f87bb)
+
+**Performance**
+
+- **proxies** Avoid row builder allocations (765d386)
+- **startup** Load profiles, localization, and window setup in parallel (204b57a)
+
 ## v0.8.103 (2026-10-07)
 
 **Performance**

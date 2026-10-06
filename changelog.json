@@ -2,6 +2,39 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.104",
+      "tag": "v0.8.104",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "25f87bb",
+              "scope": "boot",
+              "text": "Keep storage failures non-fatal"
+            }
+          ]
+        },
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "765d386",
+              "scope": "proxies",
+              "text": "Avoid row builder allocations"
+            },
+            {
+              "id": "204b57a",
+              "scope": "startup",
+              "text": "Load profiles, localization, and window setup in parallel"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.103",
       "tag": "v0.8.103",
       "date": "2026-10-07",
