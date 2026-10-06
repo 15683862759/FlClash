@@ -72,7 +72,7 @@ Widget _closeButtonIcon(BuildContext context) =>
 
 class ApplicationState extends ConsumerState<Application> {
   Timer? _autoUpdateProfilesTaskTimer;
-  bool _preHasVpn = false;
+  Set<ConnectivityResult>? _previousConnectivity;
 
   final _pageTransitionsTheme = const PageTransitionsTheme(
     builders: <TargetPlatform, PageTransitionsBuilder>{
@@ -147,14 +147,22 @@ class ApplicationState extends ConsumerState<Application> {
   Future<void> _handleConnectivityChanged(
     List<ConnectivityResult> results,
   ) async {
+    final currentConnectivity = results.toSet();
+    final previousConnectivity = _previousConnectivity;
+    if (previousConnectivity != null &&
+        previousConnectivity.length == currentConnectivity.length &&
+        previousConnectivity.containsAll(currentConnectivity)) {
+      return;
+    }
+    _previousConnectivity = currentConnectivity;
     commonPrint.log('connectivityChanged ${results.toString()}');
     unawaited(systemDnsCoordinator?.resync() ?? Future.value());
     unawaited(ref.read(systemActionProvider.notifier).updateLocalIp());
-    final hasVpn = results.contains(ConnectivityResult.vpn);
-    if (_preHasVpn == hasVpn) {
+    final hasVpn = currentConnectivity.contains(ConnectivityResult.vpn);
+    final hadVpn = previousConnectivity?.contains(ConnectivityResult.vpn);
+    if (hadVpn != null && hadVpn != hasVpn) {
       ref.read(routeTrackerProvider.notifier).bumpHostEpoch();
     }
-    _preHasVpn = hasVpn;
   }
 
   @override
