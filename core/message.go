@@ -113,10 +113,10 @@ func runMessageBatcher(
 			}
 		}
 		deadline = nil
-		// Copy out so send can run without racing the reused buffer.
-		current := append([]Message(nil), batch...)
+		// send must consume or copy the batch before returning; the batcher
+		// reuses this slice for the next batch.
+		send(batch)
 		batch = batch[:0]
-		send(current)
 	}
 	appendMessage := func(message Message) {
 		if len(batch) == 0 {

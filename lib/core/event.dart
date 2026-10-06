@@ -20,6 +20,10 @@ List<CoreEvent> coreEventsFromData(Object? data) {
 }
 
 abstract mixin class CoreEventListener {
+  bool get wantsRequestEvents => true;
+
+  bool get wantsDnsEvents => true;
+
   void onLog(Log log) {}
 
   void onDelay(Delay delay) {}
@@ -57,60 +61,90 @@ class CoreEventManager {
   /// Dispatches on the calling stack so a disposed listener is not hit by a
   /// late Stream microtask after the widget tree is already torn down.
   void sendEvent(CoreEvent event) {
+    if (event.type == CoreEventType.request && !_hasRequestListener) {
+      return;
+    }
+    if (event.type == CoreEventType.dns && !_hasDnsListener) {
+      return;
+    }
+    if (_listeners.length == 1) {
+      _sendToListener(_listeners.first, event);
+      return;
+    }
     for (final CoreEventListener listener in List.of(_listeners)) {
-      try {
-        switch (event.type) {
-          case CoreEventType.log:
-            listener.onLog(
-              Log.fromJson(Map<String, Object?>.from(event.data as Map)),
-            );
-            break;
-          case CoreEventType.delay:
-            listener.onDelay(
-              Delay.fromJson(Map<String, Object?>.from(event.data as Map)),
-            );
-            break;
-          case CoreEventType.request:
-            listener.onRequest(
-              TrackerInfo.fromJson(
-                Map<String, Object?>.from(event.data as Map),
-              ),
-            );
-            break;
-          case CoreEventType.dns:
-            listener.onDns(
-              DnsQuery.fromJson(Map<String, Object?>.from(event.data as Map)),
-            );
-            break;
-          case CoreEventType.loaded:
-            listener.onLoaded('${event.data}');
-            break;
-          case CoreEventType.crash:
-            listener.onCrash('${event.data}');
-            break;
-          case CoreEventType.geoUpdate:
-            final data = Map<String, dynamic>.from(event.data as Map);
-            listener.onGeoUpdate(
-              data['type'] as String,
-              data['updating'] as bool,
-              data['skipped'] as bool? ?? false,
-              data['error'] as String?,
-            );
-            break;
-          case CoreEventType.routeChanged:
-            listener.onRouteChanged(
-              RouteSnapshot.fromJson(
-                Map<String, Object?>.from(event.data as Map),
-              ),
-            );
-            break;
-        }
-      } catch (error) {
-        commonPrint.log(
-          'Unable to dispatch Core event ${event.type.name}: $error',
-          logLevel: LogLevel.error,
-        );
+      _sendToListener(listener, event);
+    }
+  }
+
+  bool get _hasRequestListener {
+    for (final listener in _listeners) {
+      if (listener.wantsRequestEvents) {
+        return true;
       }
+    }
+    return false;
+  }
+
+  bool get _hasDnsListener {
+    for (final listener in _listeners) {
+      if (listener.wantsDnsEvents) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void _sendToListener(CoreEventListener listener, CoreEvent event) {
+    try {
+      switch (event.type) {
+        case CoreEventType.log:
+          listener.onLog(
+            Log.fromJson(Map<String, Object?>.from(event.data as Map)),
+          );
+          break;
+        case CoreEventType.delay:
+          listener.onDelay(
+            Delay.fromJson(Map<String, Object?>.from(event.data as Map)),
+          );
+          break;
+        case CoreEventType.request:
+          listener.onRequest(
+            TrackerInfo.fromJson(Map<String, Object?>.from(event.data as Map)),
+          );
+          break;
+        case CoreEventType.dns:
+          listener.onDns(
+            DnsQuery.fromJson(Map<String, Object?>.from(event.data as Map)),
+          );
+          break;
+        case CoreEventType.loaded:
+          listener.onLoaded('${event.data}');
+          break;
+        case CoreEventType.crash:
+          listener.onCrash('${event.data}');
+          break;
+        case CoreEventType.geoUpdate:
+          final data = Map<String, dynamic>.from(event.data as Map);
+          listener.onGeoUpdate(
+            data['type'] as String,
+            data['updating'] as bool,
+            data['skipped'] as bool? ?? false,
+            data['error'] as String?,
+          );
+          break;
+        case CoreEventType.routeChanged:
+          listener.onRouteChanged(
+            RouteSnapshot.fromJson(
+              Map<String, Object?>.from(event.data as Map),
+            ),
+          );
+          break;
+      }
+    } catch (error) {
+      commonPrint.log(
+        'Unable to dispatch Core event ${event.type.name}: $error',
+        logLevel: LogLevel.error,
+      );
     }
   }
 

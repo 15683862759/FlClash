@@ -4,15 +4,35 @@ import 'package:fl_clash/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _RecordingListener with CoreEventListener {
-  _RecordingListener({this.onLoadedCallback});
+  _RecordingListener({
+    this.onLoadedCallback,
+    this.wantsRequestEvents = true,
+    this.wantsDnsEvents = true,
+  });
 
   final void Function()? onLoadedCallback;
+  @override
+  final bool wantsRequestEvents;
+  @override
+  final bool wantsDnsEvents;
   final List<String> loaded = [];
+  final List<TrackerInfo> requests = [];
+  final List<DnsQuery> dnsQueries = [];
 
   @override
   void onLoaded(String providerName) {
     loaded.add(providerName);
     onLoadedCallback?.call();
+  }
+
+  @override
+  void onRequest(TrackerInfo connection) {
+    requests.add(connection);
+  }
+
+  @override
+  void onDns(DnsQuery dnsQuery) {
+    dnsQueries.add(dnsQuery);
   }
 }
 
@@ -50,4 +70,33 @@ void main() {
       expect(second.loaded, ['provider-a', 'provider-b']);
     },
   );
+
+  test('skips request and DNS parsing when no listener wants them', () {
+    final listener = _RecordingListener(
+      wantsRequestEvents: false,
+      wantsDnsEvents: false,
+    );
+    coreEventManager.addListener(listener);
+    addTearDown(() => coreEventManager.removeListener(listener));
+
+    coreEventManager.sendEvent(
+      const CoreEvent(
+        type: CoreEventType.request,
+        data: {'id': 'connection-1', 'metadata': <String, Object?>{}},
+      ),
+    );
+    coreEventManager.sendEvent(
+      const CoreEvent(
+        type: CoreEventType.dns,
+        data: {
+          'domain': 'example.test',
+          'type': 'A',
+          'time': '2026-09-18T04:30:01Z',
+        },
+      ),
+    );
+
+    expect(listener.requests, isEmpty);
+    expect(listener.dnsQueries, isEmpty);
+  });
 }
