@@ -2,6 +2,39 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.102",
+      "tag": "v0.8.102",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "f6a5635",
+              "scope": "lifecycle",
+              "text": "Keep connection polling active while a window is unfocused"
+            }
+          ]
+        },
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "cf88acc",
+              "scope": "app",
+              "text": "Reduce idle traffic polling and icon prefetch pressure"
+            },
+            {
+              "id": "20d21f9",
+              "scope": "proxies",
+              "text": "Interactive delay tests jump ahead of bulk probes"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.101",
       "tag": "v0.8.101",
       "date": "2026-10-07",

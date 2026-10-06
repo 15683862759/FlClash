@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.8.102 (2026-10-07)
+
+**Bug Fixes**
+
+- **lifecycle** Keep connection polling active while a window is unfocused (f6a5635)
+
+**Performance**
+
+- **app** Reduce idle traffic polling and icon prefetch pressure (cf88acc)
+- **proxies** Interactive delay tests jump ahead of bulk probes (20d21f9)
+
 ## v0.8.101 (2026-10-07)
 
 **Bug Fixes**
