@@ -43,9 +43,14 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     });
     ref.listenManual(groupsProvider, (prev, next) {
       if (prev != next) {
-        unawaited(precacheTargetIcons(next.map((group) => group.icon)));
+        _precacheVisibleIcons();
       }
     }, fireImmediately: true);
+    ref.listenManual(appVisibleProvider, (_, visible) {
+      if (visible) {
+        _precacheVisibleIcons();
+      }
+    });
     ref.listenManual(needUpdateGroupsProvider, (prev, next) {
       if (prev != next) {
         ref.read(proxiesActionProvider.notifier).updateGroupsDebounce();
@@ -85,6 +90,17 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       AppLifecycleState.paused ||
       AppLifecycleState.detached => false,
     };
+  }
+
+  void _precacheVisibleIcons() {
+    if (!mounted || !ref.read(appVisibleProvider)) {
+      return;
+    }
+    final groups = ref.read(groupsProvider);
+    if (groups.isEmpty) {
+      return;
+    }
+    unawaited(precacheTargetIcons(groups.map((group) => group.icon)));
   }
 
   @override
