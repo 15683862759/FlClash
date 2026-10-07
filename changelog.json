@@ -2,6 +2,99 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.109",
+      "tag": "v0.8.109",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "51304c8",
+              "scope": "core",
+              "text": "Skip listeners removed during event dispatch"
+            },
+            {
+              "id": "9b2a952",
+              "scope": "core,proxies",
+              "text": "Correctly clear computed proxy selections"
+            }
+          ]
+        },
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "cb3b064",
+              "scope": "proxies",
+              "text": "Reuse group lists when no selection strip is needed"
+            },
+            {
+              "id": "5bf2fed",
+              "scope": "proxies",
+              "text": "Lower proxy card memory and rebuild churn"
+            },
+            {
+              "id": "60b9e5a",
+              "scope": "core",
+              "text": "Scan only groups for proxy selection deltas"
+            },
+            {
+              "id": "fb48d28",
+              "scope": "startup",
+              "text": "Faster startup with no profile rewrite"
+            },
+            {
+              "id": "b1a5c51",
+              "scope": "proxies",
+              "text": "Lower delay batch snapshot overhead"
+            },
+            {
+              "id": "2b53ee0",
+              "scope": "proxies",
+              "text": "Lower proxy card provider churn"
+            },
+            {
+              "id": "2416615",
+              "scope": "proxies",
+              "text": "Combine delay and phase watches"
+            },
+            {
+              "id": "329e5c1",
+              "scope": "connection",
+              "text": "Reuse rows when speeds are unchanged"
+            },
+            {
+              "id": "ecd13ee",
+              "scope": "core,proxies",
+              "text": "Smoother large proxy lists and lower event overhead"
+            },
+            {
+              "id": "b32125b",
+              "scope": "proxies",
+              "text": "Smoother proxy tab updates"
+            },
+            {
+              "id": "686e421",
+              "scope": "proxies,startup",
+              "text": "More stable proxy sorting and faster startup updates"
+            },
+            {
+              "id": "bb75652",
+              "scope": "proxies,tray,core",
+              "text": "Faster tray refreshes and system proxy transitions"
+            },
+            {
+              "id": "0f0ab9a",
+              "scope": "proxies,core,ui",
+              "text": "Faster proxy updates and switching under load"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.108",
       "tag": "v0.8.108",
       "date": "2026-10-07",

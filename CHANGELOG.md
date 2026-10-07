@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.8.109 (2026-10-07)
+
+**Bug Fixes**
+
+- **core** Skip listeners removed during event dispatch (51304c8)
+- **core,proxies** Correctly clear computed proxy selections (9b2a952)
+
+**Performance**
+
+- **proxies** Reuse group lists when no selection strip is needed (cb3b064)
+- **proxies** Lower proxy card memory and rebuild churn (5bf2fed)
+- **core** Scan only groups for proxy selection deltas (60b9e5a)
+- **startup** Faster startup with no profile rewrite (fb48d28)
+- **proxies** Lower delay batch snapshot overhead (b1a5c51)
+- **proxies** Lower proxy card provider churn (2b53ee0)
+- **proxies** Combine delay and phase watches (2416615)
+- **connection** Reuse rows when speeds are unchanged (329e5c1)
+- **core,proxies** Smoother large proxy lists and lower event overhead (ecd13ee)
+- **proxies** Smoother proxy tab updates (b32125b)
+- **proxies,startup** More stable proxy sorting and faster startup updates (686e421)
+- **proxies,tray,core** Faster tray refreshes and system proxy transitions (bb75652)
+- **proxies,core,ui** Faster proxy updates and switching under load (0f0ab9a)
+
 ## v0.8.108 (2026-10-07)
 
 Internal improvements only.
