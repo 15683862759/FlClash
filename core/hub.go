@@ -192,9 +192,10 @@ func bumpProxiesGeneration() {
 	proxiesGeneration.Add(1)
 }
 
-func collectProxySelections(proxies map[string]constant.Proxy) map[string]string {
-	selected := make(map[string]string)
-	for name, proxy := range proxies {
+func collectProxySelections(proxies map[string]constant.Proxy, groupNames []string) map[string]string {
+	selected := make(map[string]string, len(groupNames))
+	for _, name := range groupNames {
+		proxy := proxies[name]
 		if proxy == nil || !isProxyGroupType(proxy.Type()) {
 			continue
 		}
@@ -216,7 +217,14 @@ func collectProxySelections(proxies map[string]constant.Proxy) map[string]string
 func handleGetProxies(since uint64) ProxiesData {
 	gen := proxiesGeneration.Load()
 	proxies := tunnel.AllProxies()
-	selected := collectProxySelections(proxies)
+	groupNames := proxyGroupNames(config.GetProxyNameList(), func(name string) (constant.AdapterType, bool) {
+		p, ok := proxies[name]
+		if !ok || p == nil {
+			return 0, false
+		}
+		return p.Type(), true
+	})
+	selected := collectProxySelections(proxies, groupNames)
 
 	// Same generation: host already has the tree; only group "now" may have moved.
 	if since != 0 && since == gen {
@@ -227,25 +235,17 @@ func handleGetProxies(since uint64) ProxiesData {
 		}
 	}
 
-	allNames := proxyGroupNames(config.GetProxyNameList(), func(name string) (constant.AdapterType, bool) {
-		p, ok := proxies[name]
-		if !ok || p == nil {
-			return 0, false
-		}
-		return p.Type(), true
-	})
-
 	// Encode each top-level group and every reachable member (including
 	// nested groups). A one-level walk drops leaves that only appear under
 	// another group, which breaks Group.fromJson member resolution.
-	views := make(map[string]any, len(allNames)*4)
-	for _, groupName := range allNames {
+	views := make(map[string]any, len(groupNames)*4)
+	for _, groupName := range groupNames {
 		encodeProxyClosure(proxies, views, groupName)
 	}
 	return ProxiesData{
 		Generation: gen,
 		Full:       true,
-		All:        allNames,
+		All:        groupNames,
 		Proxies:    views,
 		Selected:   selected,
 	}
