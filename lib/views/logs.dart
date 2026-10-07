@@ -177,6 +177,8 @@ class _LogsViewState extends ConsumerState<LogsView>
 }
 
 class LogItem extends StatelessWidget {
+  static final _payloads = Expando<LogPayload>();
+
   final Log log;
   final Function(String)? onClick;
 
@@ -190,7 +192,7 @@ class LogItem extends StatelessWidget {
       LogLevel.info => RecordTone.neutral,
       LogLevel.debug || LogLevel.silent => RecordTone.muted,
     };
-    final payload = LogPayload.parse(log.payload);
+    final payload = _payloads[log] ??= LogPayload.parse(log.payload);
     return RecordListItem(
       tone: tone,
       onTap: () {},

@@ -53,6 +53,7 @@ class CoreEventManager {
 
   final ObserverList<CoreEventListener> _listeners =
       ObserverList<CoreEventListener>();
+  List<CoreEventListener>? _listenerSnapshot;
 
   bool get hasListeners {
     return _listeners.isNotEmpty;
@@ -77,11 +78,12 @@ class CoreEventManager {
       );
       return;
     }
-    if (_listeners.length == 1) {
-      _sendToListener(_listeners.first, event, payload);
+    final listeners = _listenerSnapshot ??= List.unmodifiable(_listeners);
+    if (listeners.length == 1) {
+      _sendToListener(listeners.first, event, payload);
       return;
     }
-    for (final CoreEventListener listener in List.of(_listeners)) {
+    for (final listener in listeners) {
       _sendToListener(listener, event, payload);
     }
   }
@@ -152,10 +154,12 @@ class CoreEventManager {
 
   void addListener(CoreEventListener listener) {
     _listeners.add(listener);
+    _listenerSnapshot = null;
   }
 
   void removeListener(CoreEventListener listener) {
     _listeners.remove(listener);
+    _listenerSnapshot = null;
   }
 
   Object? _parseEventPayload(CoreEvent event) {
