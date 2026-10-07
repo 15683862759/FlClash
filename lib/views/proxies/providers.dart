@@ -139,6 +139,7 @@ class ProviderItem extends ConsumerStatefulWidget {
 
 class _ProviderItemState extends ConsumerState<ProviderItem> {
   _ProviderFile _file = _ProviderFile.binary;
+  int _probeGeneration = 0;
 
   ExternalProvider get provider => widget.provider;
 
@@ -158,8 +159,9 @@ class _ProviderItemState extends ConsumerState<ProviderItem> {
   }
 
   Future<void> _probeFile() async {
+    final generation = ++_probeGeneration;
     final file = await _probeProviderFile(provider.path);
-    if (!mounted || file == _file) {
+    if (!mounted || generation != _probeGeneration || file == _file) {
       return;
     }
     setState(() {

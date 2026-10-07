@@ -33,6 +33,10 @@ class ProxiesListView extends ConsumerStatefulWidget {
 class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
   final _controller = ScrollController();
   GroupOffsets _groupOffsets = GroupOffsets.empty;
+  List<Group>? _offsetsGroups;
+  Set<String>? _offsetsUnfoldSet;
+  int? _offsetsColumns;
+  ProxyCardType? _offsetsCardType;
   double containerHeight = 0;
   String? _enterGroupName;
   Timer? _enterTimer;
@@ -89,6 +93,30 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
       }
     }
     return GroupOffsets(groups, offsets);
+  }
+
+  GroupOffsets _resolveGroupOffsets({
+    required List<Group> groups,
+    required int columns,
+    required Set<String> currentUnfoldSet,
+    required ProxyCardType cardType,
+  }) {
+    if (identical(_offsetsGroups, groups) &&
+        identical(_offsetsUnfoldSet, currentUnfoldSet) &&
+        _offsetsColumns == columns &&
+        _offsetsCardType == cardType) {
+      return _groupOffsets;
+    }
+    _offsetsGroups = groups;
+    _offsetsUnfoldSet = currentUnfoldSet;
+    _offsetsColumns = columns;
+    _offsetsCardType = cardType;
+    return _groupOffsets = _getGroupOffsets(
+      groups: groups,
+      currentUnfoldSet: currentUnfoldSet,
+      columns: columns,
+      cardType: cardType,
+    );
   }
 
   Widget _buildProxyRow({
@@ -298,7 +326,7 @@ class _ProxiesListViewState extends ConsumerState<ProxiesListView> {
                 max(constraints.maxWidth - 36, 0),
                 proxiesLayout,
               );
-              _groupOffsets = _getGroupOffsets(
+              _groupOffsets = _resolveGroupOffsets(
                 groups: state.groups,
                 currentUnfoldSet: state.currentUnfoldSet,
                 columns: columns,
