@@ -383,6 +383,9 @@ void main() {
   testWidgets('route events reach the route tracker', (tester) async {
     final coreInterface = _coreInterface();
     final container = await _pumpCoreManager(tester, coreInterface);
+    container.read(groupsProvider.notifier).value = [
+      const Group(type: GroupType.URLTest, name: 'Proxy', all: []),
+    ];
 
     coreEventManager.sendEvent(
       const CoreEvent(
@@ -402,6 +405,7 @@ void main() {
     expect(route.picksVersion, 42);
     expect(route.picks, {'Proxy': 'HK-01'});
     expect(route.synced, isTrue);
+    expect(container.read(groupsProvider).single.now, 'HK-01');
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

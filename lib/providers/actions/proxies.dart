@@ -49,6 +49,7 @@ class ProxiesAction extends _$ProxiesAction {
   bool _connectionCleanupPending = false;
   Future<void>? _activeGroupsUpdate;
   bool _pendingGroupsUpdate = false;
+  int _delaySortGeneration = 0;
 
   @override
   void build() {
@@ -85,6 +86,7 @@ class ProxiesAction extends _$ProxiesAction {
       final delays = _bufferedDelays.values.toList(growable: false);
       _bufferedDelays.clear();
       ref.read(delayDataSourceProvider.notifier).setDelays(delays);
+      unawaited(resortGroupsByDelay());
     }
     if (_bufferedStarts.isNotEmpty || _bufferedFinishes.isNotEmpty) {
       final started = List.of(_bufferedStarts);
@@ -118,11 +120,9 @@ class ProxiesAction extends _$ProxiesAction {
   }
 
   Future<void> resortGroupsByDelay() async {
+    final generation = ++_delaySortGeneration;
     final groups = ref.read(groupsProvider);
     if (groups.isEmpty) {
-      return;
-    }
-    if (_delayTestJobs.isNotEmpty) {
       return;
     }
     final sortType = ref.read(
@@ -145,10 +145,41 @@ class ProxiesAction extends _$ProxiesAction {
       selectedMap: selectedMap,
       defaultTestUrl: testUrl,
     ));
-    if (!ref.mounted) {
+    if (!ref.mounted ||
+        generation != _delaySortGeneration ||
+        identical(next, groups)) {
       return;
     }
     ref.read(groupsProvider.notifier).update((_) => next);
+  }
+
+  void applyRoutePicks(Map<String, String> picks) {
+    if (picks.isEmpty) {
+      return;
+    }
+    final groups = ref.read(groupsProvider);
+    if (groups.isEmpty) {
+      return;
+    }
+    var changed = false;
+    final next = <Group>[];
+    for (final group in groups) {
+      if (_activeSelectedIntents.containsKey(group.name)) {
+        next.add(group);
+        continue;
+      }
+      final proxyName = picks[group.name];
+      if (proxyName != null && proxyName.isNotEmpty && group.now != proxyName) {
+        changed = true;
+        _core.patchCachedGroupNow(group.name, proxyName);
+        next.add(group.copyWith(now: proxyName));
+      } else {
+        next.add(group);
+      }
+    }
+    if (changed) {
+      ref.read(groupsProvider.notifier).update((_) => next);
+    }
   }
 
   void changeProxyDebounce(String groupName, String proxyName) {
@@ -587,6 +618,7 @@ class ProxiesAction extends _$ProxiesAction {
       targets.take(_delayTestPool.idleSlots).map((target) => target.key),
     );
     pending.apply(acquired: job.held, started: job.startedOnDispatch);
+    unawaited(resortGroupsByDelay());
     try {
       await Future.wait(
         targets.map(
@@ -609,8 +641,7 @@ class ProxiesAction extends _$ProxiesAction {
         ),
       );
       if (_delayTestJobs.isEmpty) {
-        // A batch can outlive the per-result debounce; sort once from the
-        // completed map instead of exposing several partial orders.
+        // The final flush can otherwise race an in-flight partial sort.
         unawaited(resortGroupsByDelay());
       }
     }

@@ -701,7 +701,7 @@ void main() {
   });
 
   group('delay sorting', () {
-    test('does not reorder mid-batch and puts untested nodes last', () async {
+    test('puts untested nodes last while a batch runs', () async {
       final gates = {
         'HK-01': Completer<Delay?>(),
         'HK-02': Completer<Delay?>(),
@@ -745,7 +745,7 @@ void main() {
 
       expect(
         container.read(groupsProvider).single.all.map((proxy) => proxy.name),
-        ['HK-02', 'HK-01', 'HK-03'],
+        ['HK-01', 'HK-02', 'HK-03'],
       );
 
       gates['HK-02']!.complete(
@@ -763,6 +763,37 @@ void main() {
         container.read(groupsProvider).single.all.map((proxy) => proxy.name),
         ['HK-01', 'HK-02', 'HK-03'],
       );
+    });
+  });
+
+  group('route picks', () {
+    test('updates group selection from the Core pick map', () {
+      final container = buildContainer();
+      container.read(groupsProvider.notifier).value = [
+        _group('Proxy', const [_proxy]),
+      ];
+
+      actionOf(container).applyRoutePicks(const {'Proxy': 'HK-01'});
+
+      expect(container.read(groupsProvider).single.now, 'HK-01');
+    });
+
+    test('does not overwrite a selection that is still applying', () async {
+      final release = Completer<ChangeProxyResult>();
+      when(() => core.changeProxy(any())).thenAnswer((_) => release.future);
+      final container = buildContainer(profile: _selectedProfile('HK-01'));
+      container.read(groupsProvider.notifier).value = [
+        _group('Proxy', const [_proxy, Proxy(name: 'HK-02', type: 'ss')]),
+      ];
+      final action = actionOf(container);
+
+      final run = action.changeProxy(groupName: 'Proxy', proxyName: 'HK-02');
+      action.applyRoutePicks(const {'Proxy': 'HK-01'});
+
+      expect(container.read(groupsProvider).single.now, isNull);
+
+      release.complete(const ChangeProxyResult(changed: false));
+      await run;
     });
   });
 

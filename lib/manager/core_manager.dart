@@ -176,16 +176,7 @@ class _CoreContainerState extends ConsumerState<CoreManager>
       return;
     }
     super.onDelay(delay);
-    final proxiesAction = ref.read(proxiesActionProvider.notifier);
-    proxiesAction.setDelay(delay);
-    // Only delay-based sorting needs a full groups rebuild after probes.
-    // none/name order is independent of latency, and hide-timeout uses
-    // delaysAtLastTestBatch + sortNum instead.
-    // Delay tests only change sort order — re-sort the cached groups without
-    // a full Core getProxies (critical for large subscriptions).
-    proxiesAction.resortGroupsByDelayDebounce(
-      const Duration(milliseconds: 5000),
-    );
+    ref.read(proxiesActionProvider.notifier).setDelay(delay);
   }
 
   @override
@@ -300,7 +291,13 @@ class _CoreContainerState extends ConsumerState<CoreManager>
     if (!mounted) {
       return;
     }
+    final route = ref.read(routeTrackerProvider);
+    final applyPicks =
+        !route.synced || route.picksVersion != snapshot.picksVersion;
     ref.read(routeTrackerProvider.notifier).applySnapshot(snapshot);
+    if (applyPicks) {
+      ref.read(proxiesActionProvider.notifier).applyRoutePicks(snapshot.picks);
+    }
     super.onRouteChanged(snapshot);
   }
 }
