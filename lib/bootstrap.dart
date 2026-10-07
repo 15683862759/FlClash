@@ -155,7 +155,7 @@ class Bootstrap {
       localizationFuture,
       windowFuture,
     ).wait;
-    container.read(profilesProvider.notifier).setAndReorder(profiles);
+    container.read(profilesProvider.notifier).setInitial(profiles);
     if (system.isAndroid) {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     }

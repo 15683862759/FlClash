@@ -180,6 +180,10 @@ class Profiles extends _$Profiles {
     );
   }
 
+  void setInitial(List<Profile> profiles) {
+    state = List<Profile>.from(profiles);
+  }
+
   void reorder(List<Profile> profiles) {
     final next = List<Profile>.from(profiles);
     final needUpdate = <ProfilesCompanion>[];
