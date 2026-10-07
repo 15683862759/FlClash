@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.8.106 (2026-10-07)
+
+**Performance**
+
+- **proxies** Coalesce cleanup and skip redundant work (2e85fc3)
+
 ## v0.8.105 (2026-10-07)
 
 **Performance**

@@ -2,6 +2,24 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.106",
+      "tag": "v0.8.106",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "2e85fc3",
+              "scope": "proxies",
+              "text": "Coalesce cleanup and skip redundant work"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.105",
       "tag": "v0.8.105",
       "date": "2026-10-07",
