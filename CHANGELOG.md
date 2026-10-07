@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.8.111 (2026-10-08)
+
+**Bug Fixes**
+
+- **proxies,core** Faster URLTest failover and stable delay sorting (c858331)
+
 ## v0.8.110 (2026-10-07)
 
 Internal improvements only.
