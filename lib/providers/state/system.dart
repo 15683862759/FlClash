@@ -91,8 +91,11 @@ Map<String, Map<String, int>> trayDelays(Ref ref) {
   final realStates = <String, SelectedProxyState>{};
   for (final group in groups) {
     final testUrl = group.testUrl.takeFirstValid([defaultTestUrl]);
+    final selectedName = group.getCurrentSelectedName(
+      selectedMap[group.name] ?? '',
+    );
     final groupDelays = <String, int>{};
-    for (final proxy in group.all) {
+    for (final proxy in visibleTrayProxies(group, selectedName)) {
       final delay = computeProxyDelayState(
         proxyName: proxy.name,
         testUrl: testUrl,

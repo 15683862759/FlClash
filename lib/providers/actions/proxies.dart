@@ -102,6 +102,12 @@ class ProxiesAction extends _$ProxiesAction {
   /// Re-sort existing groups with the current delay map — no Core getProxies.
   /// Used after latency tests when sortType is delay.
   void resortGroupsByDelayDebounce([Duration? duration]) {
+    final sortType = ref.read(
+      proxiesStyleSettingProvider.select((state) => state.sortType),
+    );
+    if (sortType != ProxiesSortType.delay) {
+      return;
+    }
     debouncer.call(
       FunctionTag.updateDelay,
       resortGroupsByDelay,
@@ -294,8 +300,8 @@ class ProxiesAction extends _$ProxiesAction {
       if (isNewestApplied && !hasNewerIntent) {
         _pendingSelectedRollback.remove(groupName);
         _patchSelectedProxy(groupName, proxyName);
+        _requestConnectionCleanup();
       }
-      _requestConnectionCleanup();
       return true;
     } catch (error) {
       if (!_isLatestSelectedIntent(groupName, selectedIntent)) {
@@ -500,6 +506,9 @@ class ProxiesAction extends _$ProxiesAction {
     for (final batch in batches) {
       final fallbackTestUrl = ref.read(realTestUrlProvider(batch.testUrl));
       for (final proxy in batch.proxies) {
+        if (isUnprobeableProxyType(proxy.type)) {
+          continue;
+        }
         final state = realStates.putIfAbsent(
           proxy.name,
           () => computeRealSelectedProxyState(

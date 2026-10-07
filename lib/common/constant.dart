@@ -80,6 +80,7 @@ const coreConnectionWaitDuration = Duration(seconds: 10);
 /// Keep at or below the Core's delay-test concurrency (`delayTestConcurrency`
 /// in core/common.go).
 const maxConcurrentDelayTests = 32;
+const maxTrayProxiesPerGroup = 30;
 const animateDuration = Duration(milliseconds: 100);
 const midDuration = Duration(milliseconds: 200);
 const commonDuration = Duration(milliseconds: 300);
