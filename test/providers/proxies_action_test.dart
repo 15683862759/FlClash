@@ -689,6 +689,61 @@ void main() {
       },
     );
 
+    test('a second group starts before the first group drains', () async {
+      final gates = <String, Completer<Delay?>>{};
+      final started = <String>[];
+      when(() => core.asyncTestDelay(any(), any())).thenAnswer((invocation) {
+        final name = invocation.positionalArguments[1] as String;
+        started.add(name);
+        if (name.startsWith('A-')) {
+          return gates
+              .putIfAbsent(name, Completer<Delay?>.new)
+              .future;
+        }
+        return Future.value(Delay(name: name, url: _testUrl, value: 10));
+      });
+      final container = _delayContainer(buildContainer);
+      const groupCount = maxConcurrentDelayTests + 8;
+      container.read(groupsProvider.notifier).value = [
+        _group('A', [
+          for (var index = 0; index < groupCount; index++)
+            Proxy(name: 'A-$index', type: 'ss'),
+        ]),
+        _group('B', [
+          for (var index = 0; index < groupCount; index++)
+            Proxy(name: 'B-$index', type: 'ss'),
+        ]),
+      ];
+      final action = actionOf(container);
+
+      final firstRun = action.delayTestPageGroup('A');
+      await Future<void>.delayed(Duration.zero);
+      final secondRun = action.delayTestPageGroup('B');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(started, contains('A-0'));
+      expect(started.where((name) => name.startsWith('B-')), isEmpty);
+
+      gates['A-0']!.complete(null);
+      gates['A-1']!.complete(null);
+      await Future<void>.delayed(renderThrottleDuration * 2);
+
+      for (var attempt = 0; attempt < 100; attempt++) {
+        for (final gate in gates.values) {
+          if (!gate.isCompleted) {
+            gate.complete(null);
+          }
+        }
+        if (started.length >= groupCount * 2) {
+          break;
+        }
+        await Future<void>.delayed(Duration.zero);
+      }
+      await Future.wait([firstRun, secondRun]);
+
+      expect(started, contains('B-0'));
+    });
+
     test('probes a node that appears twice only once', () async {
       when(() => core.asyncTestDelay(_testUrl, 'HK-01')).thenAnswer(
         (_) async => const Delay(name: 'HK-01', url: _testUrl, value: 10),

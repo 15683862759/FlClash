@@ -530,6 +530,7 @@ class ProxiesAction extends _$ProxiesAction {
           (target) => _delayTestPool.run(
             () => _runDelayTest(job, target),
             priority: priority,
+            fairKey: job,
           ),
         ),
       );
