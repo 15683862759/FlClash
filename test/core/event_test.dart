@@ -77,6 +77,30 @@ void main() {
     },
   );
 
+  test(
+    'a listener removed during dispatch is not called later in the snapshot',
+    () {
+      final second = _RecordingListener();
+      late _RecordingListener first;
+      first = _RecordingListener(
+        onLoadedCallback: () => coreEventManager.removeListener(second),
+      );
+      coreEventManager.addListener(first);
+      coreEventManager.addListener(second);
+      addTearDown(() {
+        coreEventManager.removeListener(first);
+        coreEventManager.removeListener(second);
+      });
+
+      coreEventManager.sendEvent(
+        const CoreEvent(type: CoreEventType.loaded, data: 'provider-a'),
+      );
+
+      expect(first.loaded, ['provider-a']);
+      expect(second.loaded, isEmpty);
+    },
+  );
+
   test('skips request and DNS parsing when no listener wants them', () {
     final listener = _RecordingListener(
       wantsRequestEvents: false,

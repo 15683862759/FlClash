@@ -172,6 +172,9 @@ class _CoreContainerState extends ConsumerState<CoreManager>
 
   @override
   Future<void> onDelay(Delay delay) async {
+    if (!mounted) {
+      return;
+    }
     super.onDelay(delay);
     final proxiesAction = ref.read(proxiesActionProvider.notifier);
     proxiesAction.setDelay(delay);
@@ -187,6 +190,9 @@ class _CoreContainerState extends ConsumerState<CoreManager>
 
   @override
   void onLog(Log log) {
+    if (!mounted) {
+      return;
+    }
     _appendBounded(_bufferedLogs, log, _maxBufferedLogs);
     _scheduleFeedFlush();
     if (log.logLevel == LogLevel.error && mounted) {

@@ -102,6 +102,9 @@ class CoreEventManager {
     CoreEvent event,
     Object? payload,
   ) {
+    if (!_listeners.contains(listener)) {
+      return;
+    }
     try {
       switch (event.type) {
         case CoreEventType.log:
