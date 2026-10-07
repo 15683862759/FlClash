@@ -180,8 +180,9 @@ class CoreController {
       final selected = snapshot.selected;
       final patched = <Group>[
         for (final group in _lastGroups!)
-          if (selected[group.name] != null && selected[group.name] != group.now)
-            group.copyWith(now: selected[group.name])
+          if (selected.containsKey(group.name) &&
+              selected[group.name] != group.now)
+            group.copyWith(now: selected[group.name] ?? '')
           else
             group,
       ];

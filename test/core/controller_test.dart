@@ -191,6 +191,53 @@ void main() {
     expect(identical(first.proxies['A'], second.proxies['A']), isTrue);
   });
 
+  test('selection deltas can clear a group now value', () async {
+    const groupName = 'G';
+    when(() => mock.getProxies(since: 0)).thenAnswer(
+      (_) async => const ProxiesSnapshot(
+        generation: 1,
+        full: true,
+        data: ProxiesData(
+          all: [groupName],
+          proxies: {
+            groupName: {
+              'name': groupName,
+              'type': 'Selector',
+              'now': 'A',
+              'all': ['A'],
+            },
+            'A': {'name': 'A', 'type': 'ss'},
+          },
+        ),
+        selected: {groupName: 'A'},
+      ),
+    );
+    when(() => mock.getProxies(since: 1)).thenAnswer(
+      (_) async => const ProxiesSnapshot(
+        generation: 1,
+        full: false,
+        data: ProxiesData(all: [], proxies: {}),
+        selected: {groupName: ''},
+      ),
+    );
+
+    final full = await controller.getProxiesGroups(
+      sortType: ProxiesSortType.none,
+      delayMap: const {},
+      selectedMap: const {},
+      defaultTestUrl: 'https://test.example',
+    );
+    final delta = await controller.getProxiesGroups(
+      sortType: ProxiesSortType.none,
+      delayMap: const {},
+      selectedMap: const {},
+      defaultTestUrl: 'https://test.example',
+    );
+
+    expect(full.single.now, 'A');
+    expect(delta.single.now, '');
+  });
+
   group('connection methods', () {
     test('getConnections delegates structured connections', () async {
       final connection = TrackerInfo.fromJson({

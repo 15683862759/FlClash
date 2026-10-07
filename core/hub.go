@@ -206,9 +206,7 @@ func collectProxySelections(proxies map[string]constant.Proxy, groupNames []stri
 		// ProxyGroup.Now covers selector/urltest/fallback/loadbalance.
 		type nower interface{ Now() string }
 		if g, ok := outbound.ProxyAdapter.(nower); ok {
-			if now := g.Now(); now != "" {
-				selected[name] = now
-			}
+			selected[name] = g.Now()
 		}
 	}
 	return selected

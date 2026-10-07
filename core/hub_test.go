@@ -941,6 +941,39 @@ func TestHandleGetProxiesFiltersProviderOnlyNodes(t *testing.T) {
 	}
 }
 
+func TestCollectProxySelectionsKeepsClearedNow(t *testing.T) {
+	members := []constant.Proxy{namedProxy("node-a")}
+	pd, err := provider.NewCompatibleProvider(
+		"group-provider",
+		members,
+		provider.NewHealthCheck(members, "", 0, 0, true, nil),
+	)
+	if err != nil {
+		t.Fatalf("NewCompatibleProvider: %v", err)
+	}
+	group, err := outboundgroup.NewLoadBalance(
+		outboundgroup.GroupCommonOption{Name: "group"},
+		outboundgroup.LoadBalanceOption{},
+		namedProxy("COMPATIBLE"),
+		[]cp.ProxyProvider{pd},
+	)
+	if err != nil {
+		t.Fatalf("NewLoadBalance: %v", err)
+	}
+
+	selected := collectProxySelections(
+		map[string]constant.Proxy{"group": adapter.NewProxy(group)},
+		[]string{"group"},
+	)
+	now, exists := selected["group"]
+	if !exists {
+		t.Fatal("cleared selection was omitted from the delta")
+	}
+	if now != "" {
+		t.Fatalf("selection = %q, want an empty string", now)
+	}
+}
+
 func TestProxyViewKeepsWhatTheHostReads(t *testing.T) {
 	encode := func(proxy constant.Proxy) map[string]any {
 		t.Helper()
