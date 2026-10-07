@@ -2,6 +2,34 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.107",
+      "tag": "v0.8.107",
+      "date": "2026-10-07",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "e52e5bf",
+              "scope": "proxies",
+              "text": "Delay tests now start for later proxy groups without waiting for an earlier group to finish"
+            }
+          ]
+        },
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "4c96ddb",
+              "scope": "core",
+              "text": "Parse Core events once when several listeners are active"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.106",
       "tag": "v0.8.106",
       "date": "2026-10-07",

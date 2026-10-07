@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.8.107 (2026-10-07)
+
+**Bug Fixes**
+
+- **proxies** Delay tests now start for later proxy groups without waiting for an earlier group to finish (e52e5bf)
+
+**Performance**
+
+- **core** Parse Core events once when several listeners are active (4c96ddb)
+
 ## v0.8.106 (2026-10-07)
 
 **Performance**
