@@ -32,7 +32,7 @@ void selectGroupProxy(
   );
 }
 
-class ProxyCard extends ConsumerWidget {
+class ProxyCard extends StatelessWidget {
   final String groupName;
   final Proxy proxy;
   final GroupType groupType;
@@ -75,7 +75,7 @@ class ProxyCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final measure = globalState.measure;
     final delayText = _DelayText(proxy: proxy, testUrl: testUrl, type: type);
     final proxyNameText = _buildProxyNameText(context);
@@ -311,18 +311,35 @@ class _DelayTextState extends ConsumerState<_DelayText> {
   }
 }
 
-class _ProxyDesc extends ConsumerWidget {
+class _ProxyDesc extends StatelessWidget {
   final Proxy proxy;
 
   const _ProxyDesc({required this.proxy});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final desc = GroupTypeExtension.valueList.contains(proxy.type)
-        ? ref.watch(
+  Widget build(BuildContext context) {
+    if (!GroupTypeExtension.valueList.contains(proxy.type)) {
+      return _ProxyDescText(desc: proxy.type);
+    }
+    return Consumer(
+      builder: (_, ref, _) {
+        return _ProxyDescText(
+          desc: ref.watch(
             proxyDescProvider((name: proxy.name, type: proxy.type)),
-          )
-        : proxy.type;
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProxyDescText extends StatelessWidget {
+  final String desc;
+
+  const _ProxyDescText({required this.desc});
+
+  @override
+  Widget build(BuildContext context) {
     return EmojiText(
       desc,
       overflow: TextOverflow.ellipsis,
@@ -341,9 +358,11 @@ class _ProxyComputedMark extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final proxyName = ref.watch(proxyNameProvider(groupName));
-    if (proxyName != proxy.name) {
-      return const SizedBox();
+    final isSelected = ref.watch(
+      proxyNameProvider(groupName).select((state) => state == proxy.name),
+    );
+    if (!isSelected) {
+      return const SizedBox.shrink();
     }
     return Container(
       alignment: Alignment.topRight,
