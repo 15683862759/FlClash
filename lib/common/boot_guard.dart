@@ -15,6 +15,7 @@ class BootGuard {
   final int Function() _now;
 
   BootDecision _decision = const BootDecision();
+  BootRecord? _lastRecord;
 
   BootGuard({
     bool? supported,
@@ -84,7 +85,7 @@ class BootGuard {
     if (!_supported) {
       return;
     }
-    final record = await _readRecordSafely();
+    final record = _lastRecord ?? await _readRecordSafely();
     if (record == null) {
       return;
     }
@@ -104,7 +105,7 @@ class BootGuard {
     if (!_supported) {
       return;
     }
-    final record = await _readRecordSafely();
+    final record = _lastRecord ?? await _readRecordSafely();
     if (record == null) {
       return;
     }
@@ -148,6 +149,7 @@ class BootGuard {
   Future<void> _tryWriteRecord(BootRecord record) async {
     try {
       await _writeRecord(record);
+      _lastRecord = record;
     } catch (error) {
       _logFailure('write record', error);
     }

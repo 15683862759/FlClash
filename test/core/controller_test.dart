@@ -173,6 +173,24 @@ void main() {
     });
   });
 
+  test('selection deltas reuse the cached proxies map', () {
+    const data = ProxiesData(
+      all: ['G', 'A', 'B'],
+      proxies: {
+        'G': {'name': 'G', 'now': 'A'},
+        'A': {'name': 'A'},
+        'B': {'name': 'B'},
+      },
+    );
+
+    final first = controller.mergeSelectedIntoProxies(data, {'G': 'B'});
+    final second = controller.mergeSelectedIntoProxies(first, {'G': 'A'});
+
+    expect((second.proxies['G'] as Map)['now'], 'A');
+    expect(identical(second.proxies['A'], data.proxies['A']), isTrue);
+    expect(identical(first.proxies['A'], second.proxies['A']), isTrue);
+  });
+
   group('connection methods', () {
     test('getConnections delegates structured connections', () async {
       final connection = TrackerInfo.fromJson({

@@ -892,7 +892,7 @@ abstract class DelayState with _$DelayState {
 extension DelayStateExt on DelayState {
   int get priority {
     if (delay > 0) return 0;
-    if (delay == 0) return 1;
+    if (delay < 0) return 1;
     return 2;
   }
 

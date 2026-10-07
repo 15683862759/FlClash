@@ -294,6 +294,46 @@ void main() {
       expect(calls, 3);
     });
 
+    test('coalesces concurrent updates into one trailing refresh', () async {
+      var calls = 0;
+      final gates = [
+        Completer<ProxiesSnapshot>(),
+        Completer<ProxiesSnapshot>(),
+      ];
+      when(core.getProxies).thenAnswer((_) => gates[calls++].future);
+      ProxiesSnapshot snapshot(String proxy, int generation) => ProxiesSnapshot(
+        generation: generation,
+        full: true,
+        data: ProxiesData(
+          all: ['Proxy', proxy],
+          proxies: {
+            'Proxy': {
+              'name': 'Proxy',
+              'type': 'Selector',
+              'now': proxy,
+              'all': [proxy],
+            },
+            proxy: {'name': proxy, 'type': 'ss'},
+          },
+        ),
+        selected: const {},
+      );
+      final container = buildContainer();
+      final action = actionOf(container);
+
+      final first = action.updateGroups();
+      await Future<void>.delayed(Duration.zero);
+      final second = action.updateGroups();
+      final third = action.updateGroups();
+      gates[0].complete(snapshot('HK-01', 0));
+      await Future<void>.delayed(Duration.zero);
+      gates[1].complete(snapshot('HK-02', 1));
+      await Future.wait([first, second, third]);
+
+      expect(calls, 2);
+      expect(container.read(groupsProvider).single.all.single.name, 'HK-02');
+    });
+
     test('a core status change alone does not clear the groups', () {
       final container = buildContainer();
       actionOf(container);
@@ -657,6 +697,72 @@ void main() {
       await firstRun;
       await Future<void>.delayed(Duration.zero);
       expect(cleanupCalls, 1);
+    });
+  });
+
+  group('delay sorting', () {
+    test('does not reorder mid-batch and puts untested nodes last', () async {
+      final gates = {
+        'HK-01': Completer<Delay?>(),
+        'HK-02': Completer<Delay?>(),
+      };
+      when(() => core.asyncTestDelay(_testUrl, any())).thenAnswer(
+        (invocation) =>
+            gates[invocation.positionalArguments[1] as String]?.future ??
+            Future<Delay?>.value(),
+      );
+      const proxies = [
+        Proxy(name: 'HK-02', type: 'ss'),
+        Proxy(name: 'HK-01', type: 'ss'),
+        Proxy(name: 'HK-03', type: 'ss'),
+      ];
+      final container = _delayContainer(buildContainer);
+      container.listen(proxiesStyleSettingProvider, (_, _) {});
+      container
+          .read(proxiesStyleSettingProvider.notifier)
+          .update((state) => state.copyWith(sortType: ProxiesSortType.delay));
+      expect(
+        container.read(proxiesStyleSettingProvider).sortType,
+        ProxiesSortType.delay,
+      );
+      final action = actionOf(container);
+      container.read(groupsProvider.notifier).value = [
+        const Group(
+          type: GroupType.Selector,
+          name: 'Proxy',
+          testUrl: _testUrl,
+          all: proxies,
+        ),
+      ];
+
+      final run = action.delayTest(proxies);
+      await Future<void>.delayed(Duration.zero);
+      gates['HK-01']!.complete(
+        const Delay(name: 'HK-01', url: _testUrl, value: 50),
+      );
+      await Future<void>.delayed(renderThrottleDuration * 2);
+      await action.resortGroupsByDelay();
+
+      expect(
+        container.read(groupsProvider).single.all.map((proxy) => proxy.name),
+        ['HK-02', 'HK-01', 'HK-03'],
+      );
+
+      gates['HK-02']!.complete(
+        const Delay(name: 'HK-02', url: _testUrl, value: 200),
+      );
+      await run;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(container.read(delayDataSourceProvider)[_testUrl], {
+        'HK-01': 50,
+        'HK-02': 200,
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(
+        container.read(groupsProvider).single.all.map((proxy) => proxy.name),
+        ['HK-01', 'HK-02', 'HK-03'],
+      );
     });
   });
 

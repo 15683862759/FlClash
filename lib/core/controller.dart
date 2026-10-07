@@ -132,12 +132,14 @@ class CoreController {
   /// Generation of the last full proxies tree held in [_proxiesCache].
   int _proxiesGeneration = 0;
   ProxiesData? _proxiesCache;
+  Map<String, dynamic>? _mutableProxiesCache;
   List<Group>? _lastGroups;
 
   /// Invalidate the host-side proxies cache (e.g. after profile apply).
   void invalidateProxiesCache() {
     _proxiesGeneration = 0;
     _proxiesCache = null;
+    _mutableProxiesCache = null;
     _lastGroups = null;
   }
 
@@ -170,7 +172,7 @@ class CoreController {
         _proxiesCache != null &&
         _lastGroups != null &&
         _lastGroups!.isNotEmpty) {
-      _proxiesCache = _mergeSelectedIntoProxies(
+      _proxiesCache = mergeSelectedIntoProxies(
         _proxiesCache!,
         snapshot.selected,
       );
@@ -200,8 +202,15 @@ class CoreController {
       snapshot = await _interface.getProxies(since: 0);
     }
 
-    final proxiesData = _mergeSelectedIntoProxies(
-      snapshot.full || _proxiesCache == null ? snapshot.data : _proxiesCache!,
+    final proxiesData = mergeSelectedIntoProxies(
+      snapshot.full || _proxiesCache == null
+          ? ProxiesData(
+              proxies: _mutableProxiesCache = Map<String, dynamic>.from(
+                snapshot.data.proxies,
+              ),
+              all: snapshot.data.all,
+            )
+          : _proxiesCache!,
       snapshot.selected,
     );
     _proxiesCache = proxiesData;
@@ -220,14 +229,17 @@ class CoreController {
   }
 
   /// Writes Core selection ("now") into cached group maps without a full rebuild.
-  ProxiesData _mergeSelectedIntoProxies(
+  @visibleForTesting
+  ProxiesData mergeSelectedIntoProxies(
     ProxiesData data,
     Map<String, String> selected,
   ) {
     if (selected.isEmpty) {
       return data;
     }
-    final proxies = Map<String, dynamic>.from(data.proxies);
+    final proxies = _mutableProxiesCache ??= Map<String, dynamic>.from(
+      data.proxies,
+    );
     for (final entry in selected.entries) {
       final raw = proxies[entry.key];
       if (raw is Map) {
