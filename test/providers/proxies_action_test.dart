@@ -696,9 +696,7 @@ void main() {
         final name = invocation.positionalArguments[1] as String;
         started.add(name);
         if (name.startsWith('A-')) {
-          return gates
-              .putIfAbsent(name, Completer<Delay?>.new)
-              .future;
+          return gates.putIfAbsent(name, Completer<Delay?>.new).future;
         }
         return Future.value(Delay(name: name, url: _testUrl, value: 10));
       });

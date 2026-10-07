@@ -83,27 +83,46 @@ void main() {
     expect(order, [0, 1, 2]);
   });
 
-  test('shares queued slots across fair keys before draining one key', () async {
-    final pool = TaskPool(1);
-    final order = <String>[];
-    final blocker = Completer<void>();
-    final first = pool.run(() async {
-      order.add('a-0');
-      await blocker.future;
-    }, priority: true, fairKey: 'a');
-    final second = pool.run(() async {
-      order.add('a-1');
-    }, priority: true, fairKey: 'a');
-    final secondSameKey = pool.run(() async {
-      order.add('a-2');
-    }, priority: true, fairKey: 'a');
-    final third = pool.run(() async {
-      order.add('b-0');
-    }, priority: true, fairKey: 'b');
+  test(
+    'shares queued slots across fair keys before draining one key',
+    () async {
+      final pool = TaskPool(1);
+      final order = <String>[];
+      final blocker = Completer<void>();
+      final first = pool.run(
+        () async {
+          order.add('a-0');
+          await blocker.future;
+        },
+        priority: true,
+        fairKey: 'a',
+      );
+      final second = pool.run(
+        () async {
+          order.add('a-1');
+        },
+        priority: true,
+        fairKey: 'a',
+      );
+      final secondSameKey = pool.run(
+        () async {
+          order.add('a-2');
+        },
+        priority: true,
+        fairKey: 'a',
+      );
+      final third = pool.run(
+        () async {
+          order.add('b-0');
+        },
+        priority: true,
+        fairKey: 'b',
+      );
 
-    blocker.complete();
-    await Future.wait([first, second, secondSameKey, third]);
+      blocker.complete();
+      await Future.wait([first, second, secondSameKey, third]);
 
-    expect(order, ['a-0', 'a-1', 'b-0', 'a-2']);
-  });
+      expect(order, ['a-0', 'a-1', 'b-0', 'a-2']);
+    },
+  );
 }
