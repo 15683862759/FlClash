@@ -67,12 +67,22 @@ class CoreEventManager {
     if (event.type == CoreEventType.dns && !_hasDnsListener) {
       return;
     }
+    Object? payload;
+    try {
+      payload = _parseEventPayload(event);
+    } catch (error) {
+      commonPrint.log(
+        'Unable to parse Core event ${event.type.name}: $error',
+        logLevel: LogLevel.error,
+      );
+      return;
+    }
     if (_listeners.length == 1) {
-      _sendToListener(_listeners.first, event);
+      _sendToListener(_listeners.first, event, payload);
       return;
     }
     for (final CoreEventListener listener in List.of(_listeners)) {
-      _sendToListener(listener, event);
+      _sendToListener(listener, event, payload);
     }
   }
 
@@ -94,50 +104,42 @@ class CoreEventManager {
     return false;
   }
 
-  void _sendToListener(CoreEventListener listener, CoreEvent event) {
+  void _sendToListener(
+    CoreEventListener listener,
+    CoreEvent event,
+    Object? payload,
+  ) {
     try {
       switch (event.type) {
         case CoreEventType.log:
-          listener.onLog(
-            Log.fromJson(Map<String, Object?>.from(event.data as Map)),
-          );
+          listener.onLog(payload as Log);
           break;
         case CoreEventType.delay:
-          listener.onDelay(
-            Delay.fromJson(Map<String, Object?>.from(event.data as Map)),
-          );
+          listener.onDelay(payload as Delay);
           break;
         case CoreEventType.request:
-          listener.onRequest(
-            TrackerInfo.fromJson(Map<String, Object?>.from(event.data as Map)),
-          );
+          listener.onRequest(payload as TrackerInfo);
           break;
         case CoreEventType.dns:
-          listener.onDns(
-            DnsQuery.fromJson(Map<String, Object?>.from(event.data as Map)),
-          );
+          listener.onDns(payload as DnsQuery);
           break;
         case CoreEventType.loaded:
-          listener.onLoaded('${event.data}');
+          listener.onLoaded(payload as String);
           break;
         case CoreEventType.crash:
-          listener.onCrash('${event.data}');
+          listener.onCrash(payload as String);
           break;
         case CoreEventType.geoUpdate:
-          final data = Map<String, dynamic>.from(event.data as Map);
+          final geoUpdate = payload as _GeoUpdatePayload;
           listener.onGeoUpdate(
-            data['type'] as String,
-            data['updating'] as bool,
-            data['skipped'] as bool? ?? false,
-            data['error'] as String?,
+            geoUpdate.geoType,
+            geoUpdate.updating,
+            geoUpdate.skipped,
+            geoUpdate.error,
           );
           break;
         case CoreEventType.routeChanged:
-          listener.onRouteChanged(
-            RouteSnapshot.fromJson(
-              Map<String, Object?>.from(event.data as Map),
-            ),
-          );
+          listener.onRouteChanged(payload as RouteSnapshot);
           break;
       }
     } catch (error) {
@@ -155,6 +157,50 @@ class CoreEventManager {
   void removeListener(CoreEventListener listener) {
     _listeners.remove(listener);
   }
+
+  Object? _parseEventPayload(CoreEvent event) {
+    switch (event.type) {
+      case CoreEventType.log:
+        return Log.fromJson(Map<String, Object?>.from(event.data as Map));
+      case CoreEventType.delay:
+        return Delay.fromJson(Map<String, Object?>.from(event.data as Map));
+      case CoreEventType.request:
+        return TrackerInfo.fromJson(
+          Map<String, Object?>.from(event.data as Map),
+        );
+      case CoreEventType.dns:
+        return DnsQuery.fromJson(Map<String, Object?>.from(event.data as Map));
+      case CoreEventType.loaded:
+      case CoreEventType.crash:
+        return '${event.data}';
+      case CoreEventType.geoUpdate:
+        final data = Map<String, dynamic>.from(event.data as Map);
+        return _GeoUpdatePayload(
+          geoType: data['type'] as String,
+          updating: data['updating'] as bool,
+          skipped: data['skipped'] as bool? ?? false,
+          error: data['error'] as String?,
+        );
+      case CoreEventType.routeChanged:
+        return RouteSnapshot.fromJson(
+          Map<String, Object?>.from(event.data as Map),
+        );
+    }
+  }
+}
+
+class _GeoUpdatePayload {
+  const _GeoUpdatePayload({
+    required this.geoType,
+    required this.updating,
+    required this.skipped,
+    this.error,
+  });
+
+  final String geoType;
+  final bool updating;
+  final bool skipped;
+  final String? error;
 }
 
 final coreEventManager = CoreEventManager.instance;
