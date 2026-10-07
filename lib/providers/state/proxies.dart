@@ -333,7 +333,7 @@ final _groupTypeNames = {for (final type in GroupType.values) type.name};
 final _proxySearchTexts = Expando<String>('proxySearchTexts');
 
 @riverpod
-String proxyDesc(Ref ref, Proxy proxy) {
+String proxyDesc(Ref ref, ({String name, String type}) proxy) {
   if (!_groupTypeNames.contains(proxy.type)) {
     return proxy.type;
   }
