@@ -20,9 +20,9 @@ List<CoreEvent> coreEventsFromData(Object? data) {
 }
 
 abstract mixin class CoreEventListener {
-  bool get wantsRequestEvents => true;
+  bool get wantsRequestEvents => false;
 
-  bool get wantsDnsEvents => true;
+  bool get wantsDnsEvents => false;
 
   void onLog(Log log) {}
 
@@ -62,10 +62,15 @@ class CoreEventManager {
   /// Dispatches on the calling stack so a disposed listener is not hit by a
   /// late Stream microtask after the widget tree is already torn down.
   void sendEvent(CoreEvent event) {
-    if (event.type == CoreEventType.request && !_hasRequestListener) {
-      return;
-    }
-    if (event.type == CoreEventType.dns && !_hasDnsListener) {
+    final listeners = _listenerSnapshot ??= List.unmodifiable(_listeners);
+    final filter = switch (event.type) {
+      CoreEventType.request =>
+        (CoreEventListener listener) => listener.wantsRequestEvents,
+      CoreEventType.dns =>
+        (CoreEventListener listener) => listener.wantsDnsEvents,
+      _ => null,
+    };
+    if (filter != null && !listeners.any(filter)) {
       return;
     }
     Object? payload;
@@ -78,32 +83,18 @@ class CoreEventManager {
       );
       return;
     }
-    final listeners = _listenerSnapshot ??= List.unmodifiable(_listeners);
     if (listeners.length == 1) {
-      _sendToListener(listeners.first, event, payload);
+      final listener = listeners.first;
+      if (filter == null || filter(listener)) {
+        _sendToListener(listener, event, payload);
+      }
       return;
     }
     for (final listener in listeners) {
-      _sendToListener(listener, event, payload);
-    }
-  }
-
-  bool get _hasRequestListener {
-    for (final listener in _listeners) {
-      if (listener.wantsRequestEvents) {
-        return true;
+      if (filter == null || filter(listener)) {
+        _sendToListener(listener, event, payload);
       }
     }
-    return false;
-  }
-
-  bool get _hasDnsListener {
-    for (final listener in _listeners) {
-      if (listener.wantsDnsEvents) {
-        return true;
-      }
-    }
-    return false;
   }
 
   void _sendToListener(

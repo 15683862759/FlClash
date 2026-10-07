@@ -185,13 +185,13 @@ class CoreController {
           else
             group,
       ];
-      final sorted = computeSort(
+      final sorted = await sortGroupsTask((
         groups: patched,
         sortType: sortType,
         delayMap: delayMap,
         selectedMap: selectedMap,
         defaultTestUrl: defaultTestUrl,
-      );
+      ));
       _lastGroups = sorted;
       return sorted;
     }
