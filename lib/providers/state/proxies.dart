@@ -327,12 +327,11 @@ String? selectedProxyName(Ref ref, String groupName) {
   return group?.getCurrentSelectedName(proxyName ?? '');
 }
 
-final _groupTypeNames = {for (final type in GroupType.values) type.name};
 final _proxySearchTexts = Expando<String>('proxySearchTexts');
 
 @riverpod
 String proxyDesc(Ref ref, ({String name, String type}) proxy) {
-  if (!_groupTypeNames.contains(proxy.type)) {
+  if (!GroupTypeExtension.valueList.contains(proxy.type)) {
     return proxy.type;
   }
   final group = ref.watch(
