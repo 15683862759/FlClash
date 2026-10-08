@@ -217,7 +217,7 @@ func handleWatchRoute(watch bool, seq uint64) RouteState {
 	if watch && currentRoute.stopPoll == nil {
 		ctx, cancel := context.WithCancel(context.Background())
 		currentRoute.stopPoll = cancel
-		go pollRoute(ctx)
+		safeGoDetached("route poll", func() { pollRoute(ctx) })
 	}
 	if !watch {
 		stopRoutePollLocked()
