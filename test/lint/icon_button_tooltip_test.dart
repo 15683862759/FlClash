@@ -20,7 +20,7 @@ Iterable<File> _dartFilesIn(String root) sync* {
         entity.path.endsWith('.dart') &&
         !entity.path.endsWith('.g.dart') &&
         !entity.path.endsWith('.freezed.dart') &&
-        !entity.path.contains('/generated/')) {
+        !entity.path.replaceAll('\\', '/').contains('/generated/')) {
       yield entity;
     }
   }
@@ -43,7 +43,8 @@ void main() {
 
     for (final file in _dartFilesIn('lib')) {
       final source = file.readAsStringSync();
-      if (file.path == _wrappedInTooltip) continue;
+      final path = file.path.replaceAll('\\', '/');
+      if (path == _wrappedInTooltip) continue;
 
       for (final match in _iconButton.allMatches(source)) {
         final arguments = _arguments(source, match.end);
@@ -53,7 +54,7 @@ void main() {
 
         final line = '\n'.allMatches(source.substring(0, match.start)).length;
         unlabelled.add(
-          '${file.path}:${line + 1} — an icon has no accessible name, so '
+          '$path:${line + 1} — an icon has no accessible name, so '
           'TalkBack and VoiceOver announce nothing and the desktop build shows '
           'no hover hint.',
         );

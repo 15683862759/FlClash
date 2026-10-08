@@ -248,14 +248,12 @@ void main() {
       );
       expect(config['hosts']['router.local'], ['192.168.1.1', '192.168.1.2']);
       expect(config['sniffer']['sniff']['HTTP']['ports'], ['80', '443']);
-      expect(
-        config['proxy-providers']['remote']['path'],
-        startsWith('/profiles/providers/7/proxies/'),
-      );
-      expect(
-        config['rule-providers']['remote']['path'],
-        startsWith('/profiles/providers/7/rules/'),
-      );
+      final providerPath = '${config['proxy-providers']['remote']['path']}'
+          .replaceAll('\\', '/');
+      final ruleProviderPath = '${config['rule-providers']['remote']['path']}'
+          .replaceAll('\\', '/');
+      expect(providerPath, startsWith('/profiles/providers/7/proxies/'));
+      expect(ruleProviderPath, startsWith('/profiles/providers/7/rules/'));
       expect(config['rules'], [
         'DOMAIN-SUFFIX,added.example,Original',
         'DOMAIN,existing.example,DIRECT',
