@@ -4,7 +4,6 @@ import (
 	"context"
 	"maps"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/metacubex/mihomo/adapter"
@@ -35,7 +34,11 @@ type routeTracker struct {
 	stopPoll         context.CancelFunc
 }
 
-var routeRefreshPending atomic.Bool
+var (
+	routeRefreshMu      sync.Mutex
+	routeRefreshPending bool
+	routeRefreshAgain   bool
+)
 
 func routeWatched() bool {
 	currentRoute.mu.Lock()
@@ -44,19 +47,33 @@ func routeWatched() bool {
 }
 
 func scheduleRouteRefresh() {
-	if !isRunning.Load() {
+	if !isRunning.Load() || !routeWatched() {
 		return
 	}
-	if !routeRefreshPending.CompareAndSwap(false, true) {
+
+	routeRefreshMu.Lock()
+	if routeRefreshPending {
+		routeRefreshAgain = true
+		routeRefreshMu.Unlock()
 		return
 	}
-	if !routeWatched() {
-		routeRefreshPending.Store(false)
-		return
-	}
+	routeRefreshPending = true
+	routeRefreshMu.Unlock()
+
 	safeGoDetached("route invalidate", func() {
-		defer routeRefreshPending.Store(false)
-		refreshRoute()
+		for {
+			refreshRoute()
+
+			routeRefreshMu.Lock()
+			if routeRefreshAgain {
+				routeRefreshAgain = false
+				routeRefreshMu.Unlock()
+				continue
+			}
+			routeRefreshPending = false
+			routeRefreshMu.Unlock()
+			return
+		}
 	})
 }
 
