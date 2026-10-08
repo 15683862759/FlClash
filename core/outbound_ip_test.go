@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"sync/atomic"
 	"testing"
@@ -143,5 +144,31 @@ func TestHandleOutboundIpRejectsAnEmptySourceList(t *testing.T) {
 	result := handleOutboundIp(&OutboundIpParams{ProxyName: "node-a", Timeout: 1000})
 	if result.Error != probeErrorFailed {
 		t.Errorf("error = %q, want %q", result.Error, probeErrorFailed)
+	}
+}
+
+func TestHandleOutboundIpSurvivesASourcePanic(t *testing.T) {
+	previous := outboundIpSourceProbe
+	t.Cleanup(func() { outboundIpSourceProbe = previous })
+
+	panickingURL := "https://panicking.example/ip"
+	survivingURL := "https://surviving.example/ip"
+	outboundIpSourceProbe = func(_ context.Context, url string, _ string, _ time.Duration) *OutboundIpResult {
+		if url == panickingURL {
+			panic("source exploded")
+		}
+		return &OutboundIpResult{Url: url, Body: "ip=203.0.113.7", Delay: 1}
+	}
+
+	result := handleOutboundIp(&OutboundIpParams{
+		Urls:    []string{panickingURL, survivingURL},
+		Timeout: 300,
+	})
+
+	if result.Error != "" {
+		t.Fatalf("error = %q, want the surviving source answer", result.Error)
+	}
+	if result.Url != survivingURL {
+		t.Errorf("url = %q, want %q", result.Url, survivingURL)
 	}
 }

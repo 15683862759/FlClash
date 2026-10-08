@@ -36,6 +36,9 @@ type OutboundIpResult struct {
 	PicksVersion uint64   `json:"picks-version"`
 }
 
+// outboundIpSourceProbe is a variable so tests can drive a panicking source.
+var outboundIpSourceProbe = probeOutboundIpSource
+
 // handleOutboundIp takes the first usable answer and cancels the losers so they
 // stop occupying probe slots. Url is the source that was asked, not where it
 // redirected, and Body is raw: Dart owns the sources and their parsers.
@@ -63,7 +66,7 @@ func handleOutboundIp(params *OutboundIpParams) *OutboundIpResult {
 		next++
 		inFlight++
 		safeGoDetached("outbound IP probe", func() {
-			answers <- probeOutboundIpSource(ctx, url, params.ProxyName, timeout)
+			answers <- probeOutboundIpSourceSafely(ctx, url, params.ProxyName, timeout)
 		})
 	}
 
@@ -108,6 +111,18 @@ func probeOutboundIpSource(ctx context.Context, url string, proxyName string, ti
 		CoreEpoch:    result.CoreEpoch,
 		PicksVersion: result.PicksVersion,
 	}
+}
+
+// probeOutboundIpSourceSafely reports nil when a source probe panics, so the
+// sweep frees its slot instead of waiting for the deadline.
+func probeOutboundIpSourceSafely(ctx context.Context, url string, proxyName string, timeout time.Duration) (result *OutboundIpResult) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			logError("panic in outbound IP probe: %v\n%s", recovered, stackTrace())
+			result = nil
+		}
+	}()
+	return outboundIpSourceProbe(ctx, url, proxyName, timeout)
 }
 
 // RFC 6598 space for carrier-grade NAT, which IsPrivate leaves out.
