@@ -359,9 +359,9 @@ String? selectedProxyName(Ref ref, String groupName) {
   if (hasMember(stored)) {
     return stored;
   }
-  // Nothing was ever selected, so do not invent one; only a stale selection
-  // needs a live member to fall back to.
-  if (stored.isEmpty && live.isEmpty) {
+  // Nothing was ever selected, so there is no live name to fall back to;
+  // only a stale stored selection resolves to a member the group contains.
+  if (stored.isEmpty) {
     return '';
   }
   return group.all.firstOrNull?.name ?? '';

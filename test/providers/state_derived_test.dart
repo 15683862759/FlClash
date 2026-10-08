@@ -651,7 +651,7 @@ void main() {
     expect(container.read(selectedProxyNameProvider('Balance')), '');
   });
 
-  test('group without any selection reports no selected node', () {
+  test('group without any resolvable selection reports no selected node', () {
     final profile = Profile.normal().copyWith(selectedMap: const {});
     const groups = [
       Group(
@@ -664,6 +664,18 @@ void main() {
         type: GroupType.URLTest,
         all: [Proxy(name: 'Node-A', type: 'Direct')],
       ),
+      Group(
+        name: 'Ghost',
+        type: GroupType.Selector,
+        now: 'Removed',
+        all: [Proxy(name: 'Node-A', type: 'Direct')],
+      ),
+      Group(
+        name: 'GhostAuto',
+        type: GroupType.URLTest,
+        now: 'Removed',
+        all: [Proxy(name: 'Node-A', type: 'Direct')],
+      ),
     ];
     _profiles(container).replace([profile]);
     container.read(currentProfileIdProvider.notifier).update((_) => profile.id);
@@ -671,6 +683,8 @@ void main() {
 
     expect(container.read(selectedProxyNameProvider('Fresh')), '');
     expect(container.read(selectedProxyNameProvider('Auto')), '');
+    expect(container.read(selectedProxyNameProvider('Ghost')), '');
+    expect(container.read(selectedProxyNameProvider('GhostAuto')), '');
   });
 
   test(
