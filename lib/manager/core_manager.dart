@@ -296,7 +296,13 @@ class _CoreContainerState extends ConsumerState<CoreManager>
         !route.synced || route.picksVersion != snapshot.picksVersion;
     ref.read(routeTrackerProvider.notifier).applySnapshot(snapshot);
     if (applyPicks) {
-      ref.read(proxiesActionProvider.notifier).applyRoutePicks(snapshot.picks);
+      ref
+          .read(proxiesActionProvider.notifier)
+          .applyRoutePicks(
+            snapshot.picks,
+            closeConnections:
+                route.synced && route.coreEpoch == snapshot.coreEpoch,
+          );
     }
     super.onRouteChanged(snapshot);
   }

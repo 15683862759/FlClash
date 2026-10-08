@@ -153,7 +153,10 @@ class ProxiesAction extends _$ProxiesAction {
     ref.read(groupsProvider.notifier).update((_) => next);
   }
 
-  void applyRoutePicks(Map<String, String> picks) {
+  void applyRoutePicks(
+    Map<String, String> picks, {
+    bool closeConnections = false,
+  }) {
     if (picks.isEmpty) {
       return;
     }
@@ -179,6 +182,9 @@ class ProxiesAction extends _$ProxiesAction {
     }
     if (changed) {
       ref.read(groupsProvider.notifier).update((_) => next);
+      if (closeConnections) {
+        _requestConnectionCleanup();
+      }
     }
   }
 

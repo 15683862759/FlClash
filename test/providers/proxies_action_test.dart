@@ -778,6 +778,21 @@ void main() {
       expect(container.read(groupsProvider).single.now, 'HK-01');
     });
 
+    test('closes connections after an automatic pick change', () async {
+      when(core.closeConnections).thenAnswer((_) async => true);
+      final container = buildContainer();
+      container.read(groupsProvider.notifier).value = [
+        _group('Proxy', const [_proxy]),
+      ];
+
+      actionOf(
+        container,
+      ).applyRoutePicks(const {'Proxy': 'HK-01'}, closeConnections: true);
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+
+      verify(core.closeConnections).called(1);
+    });
+
     test('does not overwrite a selection that is still applying', () async {
       final release = Completer<ChangeProxyResult>();
       when(() => core.changeProxy(any())).thenAnswer((_) => release.future);
