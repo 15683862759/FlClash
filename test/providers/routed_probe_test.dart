@@ -93,6 +93,43 @@ void main() {
     expect(probe.calls, hasLength(1));
   });
 
+  test('an unwatched stale target starts clean when watched again', () async {
+    final container = build();
+    final probe = container.read(_probeProvider.notifier);
+
+    probe.watch('a');
+    probe.watch('b');
+    await pumpEventQueue();
+    expect(probe.calls, ['a', 'b']);
+
+    probe.answer({
+      'a': _ok(['HK-02', 'Proxy']),
+    });
+    await pumpEventQueue();
+    expect(probe.calls, ['a', 'b', 'a']);
+
+    probe.unwatch('a');
+    probe.answer({
+      'b': _ok(['JP-01', 'Auto']),
+    });
+    probe.answer({
+      'a': _ok(['HK-02', 'Proxy']),
+    });
+    await pumpEventQueue();
+
+    probe.watch('a');
+    await pumpEventQueue();
+    expect(probe.calls, ['a', 'b', 'a', 'a']);
+
+    probe.answer({
+      'a': _ok(['HK-02', 'Proxy']),
+    });
+    await pumpEventQueue();
+
+    expect(probe.calls, ['a', 'b', 'a', 'a', 'a']);
+    expect(container.read(_probeProvider).isLoading('a'), isTrue);
+  });
+
   test('probes nothing that nobody watches', () async {
     final container = build();
     final probe = container.read(_probeProvider.notifier);

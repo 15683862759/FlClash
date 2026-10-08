@@ -147,6 +147,7 @@ mixin RoutedProbe<K, V>
         !_entryOf(target).isLoading) {
       return;
     }
+    _staleUnder.remove(target);
     state = RoutedProbeState(Map.of(state.entries)..remove(target));
   }
 
@@ -249,6 +250,7 @@ mixin RoutedProbe<K, V>
       } else if (_watchers.containsKey(target)) {
         entries[target] = ProbeEntry(phase: ProbePhase.failed, stamp: stamp);
       } else {
+        _staleUnder.remove(target);
         entries.remove(target);
       }
     } else {
