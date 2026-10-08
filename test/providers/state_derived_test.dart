@@ -651,6 +651,28 @@ void main() {
     expect(container.read(selectedProxyNameProvider('Balance')), '');
   });
 
+  test('group without any selection reports no selected node', () {
+    final profile = Profile.normal().copyWith(selectedMap: const {});
+    const groups = [
+      Group(
+        name: 'Fresh',
+        type: GroupType.Selector,
+        all: [Proxy(name: 'Node-A', type: 'Direct')],
+      ),
+      Group(
+        name: 'Auto',
+        type: GroupType.URLTest,
+        all: [Proxy(name: 'Node-A', type: 'Direct')],
+      ),
+    ];
+    _profiles(container).replace([profile]);
+    container.read(currentProfileIdProvider.notifier).update((_) => profile.id);
+    container.read(groupsProvider.notifier).update((_) => groups);
+
+    expect(container.read(selectedProxyNameProvider('Fresh')), '');
+    expect(container.read(selectedProxyNameProvider('Auto')), '');
+  });
+
   test(
     'delay view providers dispose after their card stops listening',
     () async {

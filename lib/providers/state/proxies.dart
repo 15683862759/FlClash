@@ -347,15 +347,22 @@ String? selectedProxyName(Ref ref, String groupName) {
     return hasMember(group.realNow) ? group.realNow : '';
   }
 
-  final selected = group.getCurrentSelectedName(proxyName ?? '');
+  final stored = proxyName ?? '';
+  final selected = group.getCurrentSelectedName(stored);
   if (hasMember(selected)) {
     return selected;
   }
-  if (hasMember(group.realNow)) {
-    return group.realNow;
+  final live = group.realNow;
+  if (hasMember(live)) {
+    return live;
   }
-  if (hasMember(proxyName ?? '')) {
-    return proxyName;
+  if (hasMember(stored)) {
+    return stored;
+  }
+  // Nothing was ever selected, so do not invent one; only a stale selection
+  // needs a live member to fall back to.
+  if (stored.isEmpty && live.isEmpty) {
+    return '';
   }
   return group.all.firstOrNull?.name ?? '';
 }
