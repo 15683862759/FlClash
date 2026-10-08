@@ -764,6 +764,35 @@ void main() {
         ['HK-01', 'HK-02', 'HK-03'],
       );
     });
+
+    test('keeps a groups update that lands while a sort runs', () async {
+      final container = _delayContainer(buildContainer);
+      container.listen(proxiesStyleSettingProvider, (_, _) {});
+      container
+          .read(proxiesStyleSettingProvider.notifier)
+          .update((state) => state.copyWith(sortType: ProxiesSortType.delay));
+      final action = actionOf(container);
+
+      final stale = [
+        _group('Proxy', const [
+          Proxy(name: 'HK-02', type: 'ss'),
+          Proxy(name: 'HK-01', type: 'ss'),
+        ]),
+      ];
+      container.read(groupsProvider.notifier).value = stale;
+      container.read(delayDataSourceProvider.notifier).value = {
+        _testUrl: {'HK-01': 50, 'HK-02': 200},
+      };
+
+      final resort = action.resortGroupsByDelay();
+      final newer = [
+        _group('Newer', const [_proxy]),
+      ];
+      container.read(groupsProvider.notifier).value = newer;
+      await resort;
+
+      expect(container.read(groupsProvider), same(newer));
+    });
   });
 
   group('route picks', () {

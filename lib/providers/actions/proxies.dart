@@ -145,9 +145,12 @@ class ProxiesAction extends _$ProxiesAction {
       selectedMap: selectedMap,
       defaultTestUrl: testUrl,
     ));
+    // A groups update that landed while sorting (route picks, a profile
+    // switch) owns the newer state; the next flush re-sorts from it.
     if (!ref.mounted ||
         generation != _delaySortGeneration ||
-        identical(next, groups)) {
+        identical(next, groups) ||
+        !identical(ref.read(groupsProvider), groups)) {
       return;
     }
     ref.read(groupsProvider.notifier).update((_) => next);
