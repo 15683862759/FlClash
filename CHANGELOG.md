@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.8.112 (2026-10-09)
+
+**Bug Fixes**
+
+- **proxies** Keep a delayed re-sort from reverting newer proxy state (7786f2d)
+- **core** Recover failed nodes sooner and keep DIRECT members out of failover marking (d20d588)
+- **proxies** Keep proxy groups from showing a node that was never selected (d4f48b4)
+- **proxies** Restore selected-node resolution and keep stale selections from breaking locating (be85440)
+- **core** max-failed-times now triggers on the configured failure count (a7ff2d6)
+- **core** Keep test-URL health results isolated between groups (feb35cc)
+- **core** Keep per-URL proxy failures isolated between groups (d908ce7)
+- **core** Load-balance groups rotate through unavailable members (95784da)
+- **core** Fallback groups rotate through members when all are unavailable (e2aa2e7)
+
+**Performance**
+
+- **proxies** Smoother proxy list updates with large subscriptions (0ba2837)
+- **core,proxies** Faster automatic node failover and reliable selected-node locating (e96cd8b)
+
 ## v0.8.111 (2026-10-08)
 
 **Bug Fixes**

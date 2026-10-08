@@ -2,6 +2,79 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.112",
+      "tag": "v0.8.112",
+      "date": "2026-10-09",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "7786f2d",
+              "scope": "proxies",
+              "text": "Keep a delayed re-sort from reverting newer proxy state"
+            },
+            {
+              "id": "d20d588",
+              "scope": "core",
+              "text": "Recover failed nodes sooner and keep DIRECT members out of failover marking"
+            },
+            {
+              "id": "d4f48b4",
+              "scope": "proxies",
+              "text": "Keep proxy groups from showing a node that was never selected"
+            },
+            {
+              "id": "be85440",
+              "scope": "proxies",
+              "text": "Restore selected-node resolution and keep stale selections from breaking locating"
+            },
+            {
+              "id": "a7ff2d6",
+              "scope": "core",
+              "text": "max-failed-times now triggers on the configured failure count"
+            },
+            {
+              "id": "feb35cc",
+              "scope": "core",
+              "text": "Keep test-URL health results isolated between groups"
+            },
+            {
+              "id": "d908ce7",
+              "scope": "core",
+              "text": "Keep per-URL proxy failures isolated between groups"
+            },
+            {
+              "id": "95784da",
+              "scope": "core",
+              "text": "Load-balance groups rotate through unavailable members"
+            },
+            {
+              "id": "e2aa2e7",
+              "scope": "core",
+              "text": "Fallback groups rotate through members when all are unavailable"
+            }
+          ]
+        },
+        {
+          "type": "perf",
+          "entries": [
+            {
+              "id": "0ba2837",
+              "scope": "proxies",
+              "text": "Smoother proxy list updates with large subscriptions"
+            },
+            {
+              "id": "e96cd8b",
+              "scope": "core,proxies",
+              "text": "Faster automatic node failover and reliable selected-node locating"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.111",
       "tag": "v0.8.111",
       "date": "2026-10-08",
