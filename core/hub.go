@@ -511,9 +511,8 @@ func handleCloseConnections() bool {
 		return true
 	})
 	for _, c := range trackers {
-		go func(c statistic.Tracker) {
-			_ = c.Close()
-		}(c)
+		c := c
+		safeGoDetached("close connection", func() { _ = c.Close() })
 	}
 	return true
 }
@@ -823,7 +822,7 @@ func handleStartLog() {
 	logCancel = cancel
 	logMu.Unlock()
 
-	go func() {
+	safeGoDetached("log stream", func() {
 		defer func() {
 			logMu.Lock()
 			if logSubscriber == subscriber {
@@ -850,7 +849,7 @@ func handleStartLog() {
 				})
 			}
 		}
-	}()
+	})
 }
 
 func handleStopLog() {

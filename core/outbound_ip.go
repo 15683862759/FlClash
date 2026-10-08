@@ -62,9 +62,9 @@ func handleOutboundIp(params *OutboundIpParams) *OutboundIpResult {
 		url := params.Urls[next]
 		next++
 		inFlight++
-		go func() {
+		safeGoDetached("outbound IP probe", func() {
 			answers <- probeOutboundIpSource(ctx, url, params.ProxyName, timeout)
-		}()
+		})
 	}
 
 	start()
