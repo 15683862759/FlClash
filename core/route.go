@@ -61,10 +61,13 @@ func scheduleRouteRefresh() {
 	routeRefreshMu.Unlock()
 
 	safeGoDetached("route invalidate", func() {
+		completed := false
 		defer func() {
 			routeRefreshMu.Lock()
-			routeRefreshPending = false
-			routeRefreshAgain = false
+			if !completed {
+				routeRefreshPending = false
+				routeRefreshAgain = false
+			}
 			routeRefreshMu.Unlock()
 		}()
 
@@ -77,6 +80,8 @@ func scheduleRouteRefresh() {
 				routeRefreshMu.Unlock()
 				continue
 			}
+			routeRefreshPending = false
+			completed = true
 			routeRefreshMu.Unlock()
 			return
 		}
