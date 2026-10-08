@@ -337,7 +337,27 @@ String? selectedProxyName(Ref ref, String groupName) {
   final group = ref.watch(
     groupsProvider.select((state) => state.getGroup(groupName)),
   );
-  return group?.getCurrentSelectedName(proxyName ?? '');
+  if (group == null) {
+    return null;
+  }
+
+  bool hasMember(String name) =>
+      name.isNotEmpty && group.all.any((proxy) => proxy.name == name);
+  if (group.type == GroupType.LoadBalance || group.type == GroupType.Relay) {
+    return hasMember(group.realNow) ? group.realNow : '';
+  }
+
+  final selected = group.getCurrentSelectedName(proxyName ?? '');
+  if (hasMember(selected)) {
+    return selected;
+  }
+  if (hasMember(group.realNow)) {
+    return group.realNow;
+  }
+  if (hasMember(proxyName ?? '')) {
+    return proxyName;
+  }
+  return group.all.firstOrNull?.name ?? '';
 }
 
 final _proxySearchTexts = Expando<String>('proxySearchTexts');

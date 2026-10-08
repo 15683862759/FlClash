@@ -516,35 +516,10 @@ extension GroupExt on Group {
   String get realNow => now ?? '';
 
   String getCurrentSelectedName(String proxyName) {
-    final supportsSelection =
-        type == GroupType.Selector || type.isComputedSelected;
-    if (!supportsSelection) {
-      for (final proxy in all) {
-        if (proxy.name == realNow) {
-          return realNow;
-        }
-      }
-      return '';
+    if (type.isComputedSelected) {
+      return realNow.isNotEmpty ? realNow : proxyName;
     }
-
-    final storedName = proxyName.isNotEmpty ? proxyName : realNow;
-    final selected = type.isComputedSelected && realNow.isNotEmpty
-        ? realNow
-        : storedName;
-    String? fallback;
-    for (final proxy in all) {
-      final memberName = proxy.name;
-      if (memberName == selected) {
-        return selected;
-      }
-      if (memberName == realNow) {
-        fallback = realNow;
-      }
-      if (memberName == storedName) {
-        fallback ??= storedName;
-      }
-    }
-    return fallback ?? all.firstOrNull?.name ?? '';
+    return proxyName.isNotEmpty ? proxyName : realNow;
   }
 }
 
