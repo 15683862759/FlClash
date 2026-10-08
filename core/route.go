@@ -19,6 +19,7 @@ import (
 const routePollInterval = 5 * time.Second
 
 type routePickable interface {
+	outboundgroup.SelectAble
 	Now() string
 }
 
@@ -106,7 +107,10 @@ func readPicks() (map[string]string, map[string]uint32) {
 		if !ok {
 			continue
 		}
-		picks[name] = group.Now()
+		selected := group.Now()
+		if selected != "" {
+			picks[name] = selected
+		}
 	}
 	providers := tunnel.ProvidersSnapshot()
 	versions := make(map[string]uint32, len(providers))
