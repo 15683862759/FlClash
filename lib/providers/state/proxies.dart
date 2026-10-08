@@ -29,12 +29,19 @@ GroupsState currentGroupsState(Ref ref) {
   return GroupsState(value: changed ? values : shown);
 }
 
+final _needsSelectionStrip = Expando<bool>('needsSelectionStrip');
+final _withoutSelectionCache = Expando<Group>('withoutSelection');
+
 Group _withoutSelection(Group group) {
-  final needsProxyStrip = group.all.any(_hasSelection);
+  final stripped = _withoutSelectionCache[group];
+  if (stripped != null) {
+    return stripped;
+  }
+  // Immutable instances make the verdict and the stripped group stable.
+  final needsProxyStrip = _needsSelectionStrip[group] ??= group.all.any(
+    _hasSelection,
+  );
   final needsGroupStrip = group.now?.isNotEmpty ?? false;
-  // Large subscriptions rebuild this for every groupsProvider emit; keep
-  // identity when the group is already selection-free so Riverpod/list
-  // equality can short-circuit downstream proxiesListState.
   if (!needsGroupStrip && !needsProxyStrip) {
     return group;
   }
@@ -44,7 +51,7 @@ Group _withoutSelection(Group group) {
             _hasSelection(proxy) ? proxy.copyWith(now: '') : proxy,
         ]
       : group.all;
-  return group.copyWith(now: '', all: all);
+  return _withoutSelectionCache[group] = group.copyWith(now: '', all: all);
 }
 
 bool _hasSelection(Proxy proxy) => proxy.now?.isNotEmpty ?? false;
@@ -138,9 +145,7 @@ GroupsState filterGroupsState(Ref ref, String query) {
   for (final group in currentGroups.value) {
     final visible = <Proxy>[];
     for (final proxy in group.all) {
-      final text = _proxySearchTexts[proxy] ??= SearchQuery.textOf(
-        proxy.searchFields,
-      );
+      final text = _searchTextOf(proxy);
       if (searchQuery.matchesText(text)) {
         visible.add(proxy);
       }
@@ -349,18 +354,34 @@ String? selectedProxyName(Ref ref, String groupName) {
 
   final stored = proxyName ?? '';
   final selected = group.getCurrentSelectedName(stored);
-  if (hasMember(selected)) {
+  final live = group.realNow;
+  var hasSelected = false;
+  var hasLive = false;
+  var hasStored = false;
+  for (final proxy in group.all) {
+    final name = proxy.name;
+    if (selected.isNotEmpty && name == selected) {
+      hasSelected = true;
+    }
+    if (live.isNotEmpty && name == live) {
+      hasLive = true;
+    }
+    if (stored.isNotEmpty && name == stored) {
+      hasStored = true;
+    }
+    if (hasSelected && hasLive && hasStored) {
+      break;
+    }
+  }
+  if (hasSelected) {
     return selected;
   }
-  final live = group.realNow;
-  if (hasMember(live)) {
+  if (hasLive) {
     return live;
   }
-  if (hasMember(stored)) {
+  if (hasStored) {
     return stored;
   }
-  // Nothing was ever selected, so there is no live name to fall back to;
-  // only a stale stored selection resolves to a member the group contains.
   if (stored.isEmpty) {
     return '';
   }
@@ -368,6 +389,23 @@ String? selectedProxyName(Ref ref, String groupName) {
 }
 
 final _proxySearchTexts = Expando<String>('proxySearchTexts');
+final _proxySearchTextsByKey = <String, String>{};
+const _proxySearchTextCacheLimit = 20000;
+
+String _searchTextOf(Proxy proxy) {
+  final cached = _proxySearchTexts[proxy];
+  if (cached != null) {
+    return cached;
+  }
+  final key = '${proxy.name}\u0000${proxy.type}';
+  final text =
+      _proxySearchTextsByKey[key] ?? SearchQuery.textOf(proxy.searchFields);
+  if (_proxySearchTextsByKey.length >= _proxySearchTextCacheLimit) {
+    _proxySearchTextsByKey.clear();
+  }
+  _proxySearchTextsByKey[key] = text;
+  return _proxySearchTexts[proxy] = text;
+}
 
 @riverpod
 String proxyDesc(Ref ref, ({String name, String type}) proxy) {
