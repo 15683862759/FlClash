@@ -139,7 +139,10 @@ extension ProfileExtension on Profile {
   ProfileType get type =>
       url.isEmpty == true ? ProfileType.file : ProfileType.url;
 
-  bool get realAutoUpdate => url.isEmpty == true ? false : autoUpdate;
+  /// A zero or negative interval leaves nothing to schedule, so such a profile
+  /// stays out of the auto-update sweep however its toggle reads.
+  bool get realAutoUpdate =>
+      url.isNotEmpty && autoUpdate && autoUpdateDuration > Duration.zero;
 
   String get realLabel => label.takeFirstValid([id.toString()]);
 

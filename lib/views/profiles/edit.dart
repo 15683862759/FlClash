@@ -388,9 +388,8 @@ class _AutoUpdateIntervalField extends StatelessWidget {
           if (value == null || value.isEmpty) {
             return appLocalizations.profileAutoUpdateIntervalNullValidationDesc;
           }
-          try {
-            int.parse(value);
-          } catch (_) {
+          final minutes = int.tryParse(value);
+          if (minutes == null || minutes <= 0) {
             return appLocalizations
                 .profileAutoUpdateIntervalInvalidValidationDesc;
           }

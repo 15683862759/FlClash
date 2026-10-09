@@ -199,4 +199,26 @@ void main() {
     );
     expect(action.put, isEmpty);
   });
+
+  testWidgets('an auto-update interval of zero minutes is not saved', (
+    tester,
+  ) async {
+    final action = _RenameConflictProfilesAction();
+    await pumpEditProfile(
+      tester,
+      overrides: [profilesActionProvider.overrideWith(() => action)],
+    );
+
+    // Name, url, then the interval: the auto-update toggle in between is not a
+    // text field, and the label text itself renders twice while it animates.
+    final interval = find.byType(TextFormField).at(2);
+    await tester.drag(find.byType(ListView), const Offset(0, -200));
+    await tester.pump();
+    await tester.enterText(interval, '0');
+    await tester.tap(find.byTooltip(currentAppLocalizations.save));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Please enter a valid interval'), findsOneWidget);
+    expect(action.put, isEmpty);
+  });
 }

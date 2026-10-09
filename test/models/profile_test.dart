@@ -54,6 +54,22 @@ void main() {
       expect(urlProfile.realAutoUpdate, true);
       expect(urlProfile.realLabel, 'Remote');
     });
+
+    test('does not auto update on an interval that schedules nothing', () {
+      const none = Profile(
+        id: 9,
+        url: 'https://example.com/profile.yaml',
+        autoUpdateDuration: Duration.zero,
+      );
+      const backwards = Profile(
+        id: 10,
+        url: 'https://example.com/profile.yaml',
+        autoUpdateDuration: Duration(minutes: -5),
+      );
+
+      expect(none.realAutoUpdate, false);
+      expect(backwards.realAutoUpdate, false);
+    });
   });
 
   group('ProfilesExt', () {

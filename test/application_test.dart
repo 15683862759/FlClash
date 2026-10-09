@@ -191,6 +191,20 @@ void main() {
       );
     });
 
+    test('schedules nothing for an interval that cannot come due', () {
+      expect(
+        nextProfileAutoUpdateDelay([
+          Profile(
+            id: 1,
+            url: 'https://example.com/a',
+            autoUpdateDuration: Duration.zero,
+            lastUpdateDate: now.subtract(const Duration(hours: 2)),
+          ),
+        ], now),
+        isNull,
+      );
+    });
+
     test('uses the nearest future update time', () {
       expect(
         nextProfileAutoUpdateDelay([
