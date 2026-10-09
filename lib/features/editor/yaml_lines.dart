@@ -55,16 +55,30 @@ class YamlLine {
 
 String unquoteYaml(String text) {
   var value = text.trim();
-  final comment = value.startsWith('#') ? 0 : value.indexOf(' #');
+  // A ' #' inside a quoted scalar is data, so it is unwrapped before the comment runs.
+  final quoted = _quotedSpan(value);
+  if (quoted != null) {
+    return quoted;
+  }
+  if (value.startsWith('#')) {
+    return '';
+  }
+  final comment = value.indexOf(' #');
   if (comment >= 0) {
     value = value.substring(0, comment).trimRight();
   }
-  if (value.length >= 2 &&
-      (value.startsWith("'") && value.endsWith("'") ||
-          value.startsWith('"') && value.endsWith('"'))) {
-    return value.substring(1, value.length - 1);
+  return _quotedSpan(value) ?? value;
+}
+
+String? _quotedSpan(String value) {
+  if (value.length < 2) {
+    return null;
   }
-  return value;
+  final quote = value[0];
+  if ((quote != "'" && quote != '"') || !value.endsWith(quote)) {
+    return null;
+  }
+  return value.substring(1, value.length - 1);
 }
 
 sealed class YamlStep {
