@@ -55,9 +55,10 @@ void main() {
         if (RegExp('\\b$name\\b').allMatches(entry.value).length > 1) {
           continue;
         }
-        // Tests count as callers, like they do for the file level check next
-        // to this one: a helper a test drives is at least exercised.
-        final called = sources.entries.any(
+        // Only lib counts as a caller here: a helper a test alone drives is a
+        // leftover of the app, and the test that drives it hides that. Move the
+        // helper into the test instead.
+        final called = published.entries.any(
           (other) =>
               other.key != entry.key &&
               RegExp('\\b$name\\b').hasMatch(other.value),

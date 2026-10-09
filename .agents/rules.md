@@ -340,9 +340,9 @@ under `kDebugMode`, which is always true beneath `flutter test`, so its remainin
 at all; `test/common/launch_test.dart` pins the early return instead.
 
 `pumpAndSettle` never returns on a page holding `EditorView` (what `EditorPage` embeds): the code editor blinks its
-caret forever, so frames keep being scheduled. Pump explicitly instead. `encodeYamlTask` and its neighbours in
-`common/task.dart` hand work to a real isolate through `compute`, which only runs outside the fake-async zone, so a test
-awaiting one needs `tester.runAsync(...)` between the pumps.
+caret forever, so frames keep being scheduled. Pump explicitly instead. The `*Task` helpers in `common/task.dart` hand
+work to a real isolate through `compute`, which only runs outside the fake-async zone, so a test awaiting one needs
+`tester.runAsync(...)` between the pumps.
 
 The `@visibleForTesting` `database` setter in `lib/database/database.dart` deliberately does not close the instance it
 replaces. Tests inject `NativeDatabase.memory()`, which holds no file handle, and `Database.close()` is async while the

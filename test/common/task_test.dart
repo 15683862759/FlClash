@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
@@ -7,19 +8,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
-int _double(int value) => value * 2;
+/// The plain map a task reads, built the way the Core hands one over.
+Map<String, dynamic> _rawJson(Object? value) =>
+    jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
 
 void main() {
-  test('encoding helpers round-trip structured data', () async {
-    final encoded = await encodeJSONTask({
-      'name': 'FlClash',
-      'values': [1, true, null],
-    });
-    final decoded = await decodeJSONTask<Map<String, dynamic>>(encoded);
-
+  test('decodeJSONTask round-trips structured data', () async {
+    final decoded = await decodeJSONTask<Map<String, dynamic>>(
+      jsonEncode({
+        'name': 'FlClash',
+        'values': [1, true, null],
+      }),
+    );
     expect(decoded['name'], 'FlClash');
     expect(decoded['values'], [1, true, null]);
-    expect(await encodeYamlTask({'enabled': true}), contains('enabled: true'));
   });
 
   test('toGroupsTask converts, selects, and sorts core proxy data', () async {
@@ -181,29 +183,27 @@ void main() {
   test(
     'makeRealProfileTask normalizes runtime config and added rules',
     () async {
-      final rawConfig = await decodeJSONTask<Map<String, dynamic>>(
-        await encodeJSONTask({
-          'dns': {
-            'enable': true,
-            'nameserver': ['1.1.1.1'],
-          },
-          'sniffer': {
-            'sniff': {
-              'HTTP': {
-                'ports': [80, '443'],
-              },
+      final rawConfig = _rawJson({
+        'dns': {
+          'enable': true,
+          'nameserver': ['1.1.1.1'],
+        },
+        'sniffer': {
+          'sniff': {
+            'HTTP': {
+              'ports': [80, '443'],
             },
           },
-          'proxy-providers': {
-            'remote': {'type': 'http', 'url': 'https://example.com/proxy.yaml'},
-            'file': {'type': 'file', 'path': './local.yaml'},
-          },
-          'rule-providers': {
-            'remote': {'type': 'http', 'url': 'https://example.com/rule.yaml'},
-          },
-          'rules': ['DOMAIN,existing.example,DIRECT', 'MATCH,Original'],
-        }),
-      );
+        },
+        'proxy-providers': {
+          'remote': {'type': 'http', 'url': 'https://example.com/proxy.yaml'},
+          'file': {'type': 'file', 'path': './local.yaml'},
+        },
+        'rule-providers': {
+          'remote': {'type': 'http', 'url': 'https://example.com/rule.yaml'},
+        },
+        'rules': ['DOMAIN,existing.example,DIRECT', 'MATCH,Original'],
+      });
       final result = await makeRealProfileTask(
         MakeRealProfileState(
           profilesPath: '/profiles',
@@ -264,12 +264,10 @@ void main() {
   test(
     'makeRealProfileTask routes MATCH placeholders to matchTarget',
     () async {
-      final rawConfig = await decodeJSONTask<Map<String, dynamic>>(
-        await encodeJSONTask({
-          'proxies': [],
-          'rules': ['DOMAIN,existing.example,DIRECT', 'MATCH,Original'],
-        }),
-      );
+      final rawConfig = _rawJson({
+        'proxies': [],
+        'rules': ['DOMAIN,existing.example,DIRECT', 'MATCH,Original'],
+      });
       final state = MakeRealProfileState(
         profilesPath: '/profiles',
         profileId: 7,
@@ -313,12 +311,10 @@ void main() {
   test(
     'makeRealProfileTask lets the app setting own the geo updater',
     () async {
-      final rawConfig = await decodeJSONTask<Map<String, dynamic>>(
-        await encodeJSONTask({
-          'geo-auto-update': true,
-          'geo-update-interval': 6,
-        }),
-      );
+      final rawConfig = _rawJson({
+        'geo-auto-update': true,
+        'geo-update-interval': 6,
+      });
 
       final result = await makeRealProfileTask(
         MakeRealProfileState(
@@ -347,12 +343,10 @@ void main() {
 
   // A profile-shipped loopback skip-auth-prefixes would bypass the credentials.
   test('makeRealProfileTask lets the app own local authentication', () async {
-    final rawConfig = await decodeJSONTask<Map<String, dynamic>>(
-      await encodeJSONTask({
-        'authentication': ['subscription:injected'],
-        'skip-auth-prefixes': ['127.0.0.1/32'],
-      }),
-    );
+    final rawConfig = _rawJson({
+      'authentication': ['subscription:injected'],
+      'skip-auth-prefixes': ['127.0.0.1/32'],
+    });
     final state = MakeRealProfileState(
       profilesPath: '/profiles',
       profileId: 12,
@@ -430,22 +424,20 @@ void main() {
   });
 
   test('makeRealProfileTask keeps the DNS keys it cannot edit', () async {
-    final rawConfig = await decodeJSONTask<Map<String, dynamic>>(
-      await encodeJSONTask({
-        'dns': {
-          'enable': false,
-          'direct-nameserver': ['223.5.5.5'],
-          'proxy-server-nameserver-policy': {
-            'www.example.com': ['8.8.8.8'],
-          },
-          'nameserver': ['9.9.9.9'],
+    final rawConfig = _rawJson({
+      'dns': {
+        'enable': false,
+        'direct-nameserver': ['223.5.5.5'],
+        'proxy-server-nameserver-policy': {
+          'www.example.com': ['8.8.8.8'],
         },
-        'proxy-providers': {
-          'first': {'type': 'http', 'url': 'https://example.com/shared.yaml'},
-          'second': {'type': 'http', 'url': 'https://example.com/shared.yaml'},
-        },
-      }),
-    );
+        'nameserver': ['9.9.9.9'],
+      },
+      'proxy-providers': {
+        'first': {'type': 'http', 'url': 'https://example.com/shared.yaml'},
+        'second': {'type': 'http', 'url': 'https://example.com/shared.yaml'},
+      },
+    });
 
     final result = await makeRealProfileTask(
       MakeRealProfileState(
@@ -518,9 +510,7 @@ void main() {
 
   group('makeRealProfileTask interface-name mode', () {
     Future<YamlMap> runWith(PatchClashConfig realPatchConfig) async {
-      final rawConfig = await decodeJSONTask<Map<String, dynamic>>(
-        await encodeJSONTask({'interface-name': 'en0'}),
-      );
+      final rawConfig = _rawJson({'interface-name': 'en0'});
 
       final result = await makeRealProfileTask(
         MakeRealProfileState(
@@ -661,6 +651,5 @@ void main() {
 
     expect(encoded, contains('first'));
     expect(encoded, contains('\n'));
-    expect(await mapListTask([1, 2, 3], _double), [2, 4, 6]);
   });
 }

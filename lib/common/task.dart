@@ -17,25 +17,13 @@ Future<T> _decodeJSON<T>(String content) async {
   return json.decode(content);
 }
 
-Future<String> encodeJSONTask<T>(T data) async {
-  return compute<T, String>(_encodeJSON, data);
-}
-
-Future<String> _encodeJSON<T>(T content) async {
-  return json.encode(content);
-}
-
-Future<String> encodeYamlTask<T>(T data) async {
-  return compute<T, String>(_encodeYaml, data);
+/// Throws [FormatException] when the file is not UTF-8.
+Future<String?> readTextFileTask(String path) {
+  return compute(_readTextFile, path);
 }
 
 Future<String> _encodeYaml<T>(T content) async {
   return yaml.encode(content);
-}
-
-/// Throws [FormatException] when the file is not UTF-8.
-Future<String?> readTextFileTask(String path) {
-  return compute(_readTextFile, path);
 }
 
 String? _readTextFile(String path) {
@@ -652,17 +640,4 @@ Future<MigrationData> migrateLegacyConfig({
     scripts: scripts,
     links: links,
   );
-}
-
-Future<List<T>> mapListTask<T, S>(List<S> results, T Function(S) mapper) async {
-  return compute<({List<S> results, T Function(S) mapper}), List<T>>(
-    _mapListTask,
-    (results: results, mapper: mapper),
-  );
-}
-
-Future<List<T>> _mapListTask<T, S>(
-  ({List<S> results, T Function(S) mapper}) args,
-) async {
-  return args.results.map((item) => args.mapper(item)).toList();
 }
