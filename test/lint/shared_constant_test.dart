@@ -177,6 +177,228 @@ void main() {
           'the core reports the name back and the app decodes it lower cased',
     );
   });
+
+  test('the app and the core agree on the geo update status', () {
+    final core = File('core/constant.go').readAsStringSync();
+    final event = File('lib/core/event.dart').readAsStringSync();
+    final sent = _goJsonTags(core, 'GeoUpdateStatus');
+    final read = _quotedValues(event, r"data\['([^']+)'\]");
+
+    expect(sent, isNotEmpty);
+    expect(read, isNotEmpty);
+    expect(
+      read.difference(sent),
+      isEmpty,
+      reason: 'a geo update event must carry the keys the app reads',
+    );
+  });
+
+  test('every field the app reads from a core payload is one the core sends', () {
+    // Renaming either side turns the field into its default without any error,
+    // so the two halves are compared whenever one of them is edited.
+    const pairs =
+        <(String goFile, String goStruct, String dartFile, String dartClass)>[
+          (
+            'core/constant.go',
+            'InitParams',
+            'lib/models/core.dart',
+            'InitParams',
+          ),
+          (
+            'core/constant.go',
+            'SetupParams',
+            'lib/models/core.dart',
+            'SetupParams',
+          ),
+          (
+            'core/constant.go',
+            'UpdateParams',
+            'lib/models/core.dart',
+            'UpdateParams',
+          ),
+          (
+            'core/constant.go',
+            'tunSchema',
+            'lib/models/clash_config.dart',
+            'Tun',
+          ),
+          (
+            'core/constant.go',
+            'ChangeProxyParams',
+            'lib/models/core.dart',
+            'ChangeProxyParams',
+          ),
+          (
+            'core/constant.go',
+            'ChangeProxyResult',
+            'lib/models/core.dart',
+            'ChangeProxyResult',
+          ),
+          (
+            'core/constant.go',
+            'RouteState',
+            'lib/models/core.dart',
+            'RouteSnapshot',
+          ),
+          (
+            'core/constant.go',
+            'ProbeParams',
+            'lib/models/core.dart',
+            'ProbeParams',
+          ),
+          (
+            'core/constant.go',
+            'ProbeResult',
+            'lib/models/core.dart',
+            'ProbeResult',
+          ),
+          ('core/constant.go', 'Delay', 'lib/models/core.dart', 'Delay'),
+          (
+            'core/constant.go',
+            'MemoryStats',
+            'lib/models/core.dart',
+            'CoreMemoryStats',
+          ),
+          (
+            'core/constant.go',
+            'ExternalProvider',
+            'lib/models/core.dart',
+            'ExternalProvider',
+          ),
+          (
+            'core/outbound_ip.go',
+            'OutboundIpParams',
+            'lib/models/core.dart',
+            'OutboundIpParams',
+          ),
+          (
+            'core/outbound_ip.go',
+            'OutboundIpResult',
+            'lib/models/core.dart',
+            'OutboundIpResult',
+          ),
+          (
+            'core/service_check.go',
+            'ServiceCheckParams',
+            'lib/models/core.dart',
+            'ServiceCheckParams',
+          ),
+          (
+            'core/service_check.go',
+            'ServiceCheckItem',
+            'lib/models/core.dart',
+            'ServiceCheckItem',
+          ),
+          (
+            'core/dns_query.go',
+            'DnsQuery',
+            'lib/models/common.dart',
+            'DnsQuery',
+          ),
+        ];
+    final sources = <String, String>{};
+    for (final (goFile, _, dartFile, _) in pairs) {
+      sources[goFile] ??= File(goFile).readAsStringSync();
+      sources[dartFile] ??= File(dartFile).readAsStringSync();
+    }
+
+    for (final (goFile, goStruct, dartFile, dartClass) in pairs) {
+      final sent = _goJsonTags(sources[goFile]!, goStruct);
+      final read = _dartJsonNames(sources[dartFile]!, dartClass);
+      expect(sent, isNotEmpty, reason: '$goStruct must send something');
+      expect(read, isNotEmpty, reason: '$dartClass must read something');
+      final missing = read
+          .where((name) => !sent.contains(name) && !sent.contains(_kebab(name)))
+          .toSet();
+      expect(
+        missing,
+        isEmpty,
+        reason:
+            '$dartClass reads ${missing.join(', ')}, which $goStruct does not '
+            'send ($sent)',
+      );
+    }
+  });
+}
+
+String _kebab(String name) => name
+    .replaceAllMapped(
+      RegExp('[A-Z]'),
+      (match) => '-${match.group(0)!.toLowerCase()}',
+    )
+    .replaceFirst(RegExp('^-'), '');
+
+/// The names the fields of a Go struct are encoded under.
+Set<String> _goJsonTags(String source, String name) {
+  final start = source.indexOf('type $name struct {');
+  if (start < 0) {
+    fail('could not find struct $name in the core sources');
+  }
+  final end = source.indexOf('\n}', start);
+  if (end < 0) {
+    fail('could not find the end of struct $name');
+  }
+  return _quotedValues(
+    source.substring(start, end),
+    r'^\s*[A-Z]\w*\s+.*json:"([^",`]+)',
+  );
+}
+
+/// The keys a freezed factory of the app reads, taking the `@JsonKey` name when
+/// one is given and the field name otherwise.
+Set<String> _dartJsonNames(String source, String className) {
+  const header = 'const factory ';
+  final open = source.indexOf('$header$className({');
+  if (open < 0) {
+    fail('could not find the $className factory in the app sources');
+  }
+  final close = source.indexOf('}) =', open);
+  if (close < 0) {
+    fail('could not find the end of the $className factory');
+  }
+  final names = <String>{};
+  for (final chunk in _splitTopLevel(
+    source.substring(open + header.length + className.length + 2, close),
+  )) {
+    final parameter = chunk.trim();
+    if (parameter.isEmpty) {
+      continue;
+    }
+    final keyed = RegExp("name: '([^']+)'").firstMatch(parameter);
+    if (keyed != null) {
+      names.add(keyed.group(1)!);
+      continue;
+    }
+    final field = RegExp(
+      r'([A-Za-z_]\w*)\s*\??\s*$',
+    ).firstMatch(parameter.replaceAll(RegExp(r'=\s*.+$', dotAll: true), ''));
+    if (field == null) {
+      fail('could not read a field name from "$parameter"');
+    }
+    names.add(field.group(1)!);
+  }
+  return names;
+}
+
+List<String> _splitTopLevel(String body) {
+  final parts = <String>[];
+  final buffer = StringBuffer();
+  var depth = 0;
+  for (var index = 0; index < body.length; index++) {
+    final char = body[index];
+    if (char == '<' || char == '(' || char == '[') {
+      depth++;
+    } else if (char == '>' || char == ')' || char == ']') {
+      depth--;
+    } else if (char == ',' && depth == 0) {
+      parts.add(buffer.toString());
+      buffer.clear();
+      continue;
+    }
+    buffer.write(char);
+  }
+  parts.add(buffer.toString());
+  return parts;
 }
 
 String _rustConst(String source, String name) {
