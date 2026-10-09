@@ -9,6 +9,7 @@ import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/manager/core_manager.dart';
 import 'package:fl_clash/manager/status_manager.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/providers/action.dart';
 import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/core.dart';
@@ -56,6 +57,15 @@ const _nullProfileSetupState = SetupState(
 );
 
 const _crash = CoreEvent(type: CoreEventType.crash, data: 'boom');
+
+class _RecordingCoreLostSetupAction extends SetupAction {
+  int markCoreLostCount = 0;
+
+  @override
+  void markCoreLost() {
+    markCoreLostCount++;
+  }
+}
 
 CoreEvent _geoUpdate({
   bool updating = false,
@@ -166,11 +176,13 @@ void main() {
   ) async {
     final coreInterface = _MockCoreHandlerInterface();
     when(() => coreInterface.stopLog()).thenAnswer((_) {});
+    final setupAction = _RecordingCoreLostSetupAction();
     final container = ProviderContainer(
       overrides: [
         coreHandlerProvider.overrideWithValue(
           CoreController.scoped(coreInterface),
         ),
+        setupActionProvider.overrideWith(() => setupAction),
       ],
     );
     addTearDown(container.dispose);
@@ -195,6 +207,7 @@ void main() {
 
     expect(container.read(coreStatusProvider), CoreStatus.disconnected);
     expect(transitions, [CoreStatus.disconnected]);
+    expect(setupAction.markCoreLostCount, 1);
     verifyNever(() => coreInterface.stop());
 
     await tester.pumpWidget(const SizedBox());
@@ -205,7 +218,12 @@ void main() {
     tester,
   ) async {
     final coreInterface = _coreInterface();
-    final container = await _pumpCoreManager(tester, coreInterface);
+    final setupAction = _RecordingCoreLostSetupAction();
+    final container = await _pumpCoreManager(
+      tester,
+      coreInterface,
+      overrides: [setupActionProvider.overrideWith(() => setupAction)],
+    );
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     container.read(coreStatusProvider.notifier).value = CoreStatus.connected;
 
@@ -214,6 +232,7 @@ void main() {
 
     expect(container.read(coreStatusProvider), CoreStatus.disconnected);
     expect(find.text('boom'), findsOneWidget);
+    expect(setupAction.markCoreLostCount, 1);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -222,7 +241,12 @@ void main() {
     tester,
   ) async {
     final coreInterface = _coreInterface();
-    final container = await _pumpCoreManager(tester, coreInterface);
+    final setupAction = _RecordingCoreLostSetupAction();
+    final container = await _pumpCoreManager(
+      tester,
+      coreInterface,
+      overrides: [setupActionProvider.overrideWith(() => setupAction)],
+    );
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     container.read(coreStatusProvider.notifier).value = CoreStatus.connecting;
     final transitions = <CoreStatus>[];
@@ -237,6 +261,7 @@ void main() {
 
     expect(container.read(coreStatusProvider), CoreStatus.connecting);
     expect(transitions, isEmpty);
+    expect(setupAction.markCoreLostCount, 0);
     expect(find.text('boom'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());

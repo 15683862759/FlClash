@@ -218,6 +218,19 @@ class SetupAction extends _$SetupAction {
     return true;
   }
 
+  /// The Core is gone without a stop request, so the session ends here: there
+  /// is no listener left to stop, and everything it counted is stale. Staying
+  /// "running" would keep the tray, the start button and the clock claiming a
+  /// proxy that is no longer there.
+  void markCoreLost() {
+    if (_startTime == null) {
+      return;
+    }
+    _setLocalRunning(false);
+    ref.read(trafficsProvider.notifier).clear();
+    ref.read(totalTrafficProvider.notifier).value = const Traffic();
+  }
+
   Future<void> _setCoreRunning(_RunRequest request) {
     return _listenerScheduler.run(() async {
       if (!_isCurrent(request)) {

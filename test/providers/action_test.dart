@@ -916,6 +916,43 @@ void main() {
 
       expect(container.read(shouldPatchSystemDnsProvider), isFalse);
     });
+
+    test('a lost core ends the session without calling the core', () async {
+      final container = ProviderContainer(
+        overrides: [
+          initProvider.overrideWithBuild((_, _) => true),
+          commonActionProvider.overrideWith(_RaceCommonAction.new),
+          setupActionProvider.overrideWith(_RaceSetupAction.new),
+        ],
+      );
+      addTearDown(container.dispose);
+      final trafficSubscription = container.listen(trafficsProvider, (_, _) {});
+      final totalSubscription = container.listen(
+        totalTrafficProvider,
+        (_, _) {},
+      );
+      addTearDown(trafficSubscription.close);
+      addTearDown(totalSubscription.close);
+      final action =
+          container.read(setupActionProvider.notifier) as _RaceSetupAction;
+      await action.setRunning(true);
+      container
+          .read(trafficsProvider.notifier)
+          .addTraffic(const Traffic(up: 1, down: 2));
+      container.read(totalTrafficProvider.notifier).value = const Traffic(
+        up: 3,
+        down: 4,
+      );
+      expect(container.read(isStartProvider), isTrue);
+
+      action.markCoreLost();
+
+      expect(container.read(isStartProvider), isFalse);
+      expect(container.read(runTimeProvider), isNull);
+      expect(container.read(trafficsProvider).list, isEmpty);
+      expect(container.read(totalTrafficProvider), const Traffic());
+      expect(action.resetCoreTrafficCount, 0);
+    });
   });
 }
 
