@@ -216,6 +216,26 @@ export JAVA_HOME="$(brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"
 Always-on VPN entry, system VPN revoke, actual permission UI, and rapid device start/stop still require Android device or
 emulator validation; Kotlin compilation cannot prove those system callbacks.
 
+Where the checkout path holds non-ASCII characters, AGP refuses to apply
+`com.android.application` until `android.overridePathCheck=true` is set, which is why
+`android/gradle.properties` carries it: without the flag the app module never configures and even
+`flutter build apk` stops before compiling anything.
+
+The wrapper pins the `-all` distribution, so a standalone Gradle 9.8.0 (the version AGP 9.4.1
+requires) avoids that download. `plugins.gradle.org` drops the TLS handshake on some networks,
+so point an init script at a mirror instead of editing the build:
+
+```bash
+export JAVA_HOME="<any JDK 17>"
+gradle -p android --no-daemon -I <init-script-with-mirrors> \
+  :service:compileDebugKotlin :common:test :service:test \
+  :app:testDebugUnitTest -x :app:compileFlutterBuildDebug
+```
+
+`:app:testDebugUnitTest` needs `-x :app:compileFlutterBuildDebug` exactly as CI's `android` job
+does, because that task runs the native build hooks: without the Android NDK its `rust_api` step
+fails, and the VPN/state tests under `android/tests/` do not depend on it.
+
 ## Changelog And Release
 
 The changelog is derived from Conventional Commits by `tool/changelog.dart` and written to two committed files:
