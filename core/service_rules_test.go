@@ -476,6 +476,39 @@ func TestCheckDisneyPlusWalksTheHandshake(t *testing.T) {
 	}, checkDisneyPlus); item.Status != serviceFailed {
 		t.Errorf("a device call without an assertion gave %q, want %q", item.Status, serviceFailed)
 	}
+
+	regionless := handshake(`{"inSupportedLocation":true}`)
+	if item := runServiceRule(t, regionless, checkDisneyPlus); item.Status != serviceUnavailable {
+		t.Errorf("a session without a country gave %q, want %q", item.Status, serviceUnavailable)
+	}
+
+	undecided := handshake(`{"countryCode":"US"}`)
+	if item := runServiceRule(t, undecided, checkDisneyPlus); item.Status != serviceFailed {
+		t.Errorf("a session without a support flag gave %q, want %q", item.Status, serviceFailed)
+	}
+
+	failedSession := handshake(`{"countryCode":"US","inSupportedLocation":true}`)
+	failedSession[sessionUrl] = &ProbeResult{StatusCode: http.StatusInternalServerError}
+	if item := runServiceRule(t, failedSession, checkDisneyPlus); item.Status != serviceFailed {
+		t.Errorf("a failed session call gave %q, want %q", item.Status, serviceFailed)
+	}
+}
+
+func TestCheckNetflixKeepsServingWhenTheRegionIsUnreadable(t *testing.T) {
+	served := runServiceRule(t, map[string]*ProbeResult{
+		netflixCdnUrl:   {StatusCode: http.StatusOK, Body: `<html>no targets</html>`},
+		netflixFirstUrl: {StatusCode: http.StatusOK},
+		netflixSecondUrl: {
+			StatusCode: http.StatusMovedPermanently,
+		},
+		netflixRegionUrl: {
+			StatusCode: http.StatusMovedPermanently,
+			header:     mhttp.Header{"Location": {"/jp"}},
+		},
+	}, checkNetflix)
+	if served.Status != serviceAvailable || served.Region != "" {
+		t.Errorf("an unreadable redirect gave %+v, want available without a region", served)
+	}
 }
 
 func TestCheckChatGptFoldsTheIosAndWebAnswers(t *testing.T) {
