@@ -78,13 +78,16 @@ void main() {
   test('a loopback-looking name that is not this machine keeps its proxy', () {
     final container = buildContainer(mixedPort: 7891);
 
-    expect(
-      FlClashHttpOverrides.findProxyFor(
-        container,
-        Uri.parse('http://localtest.me:8080/'),
-      ),
-      'PROXY localhost:7891',
-    );
+    for (final raw in [
+      'http://localtest.me:8080/',
+      'http://127.example.com:8080/',
+    ]) {
+      expect(
+        FlClashHttpOverrides.findProxyFor(container, Uri.parse(raw)),
+        'PROXY localhost:7891',
+        reason: raw,
+      );
+    }
   });
 
   test('routes through the mixed port while the core is running', () {

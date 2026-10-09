@@ -12,7 +12,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const _loopbackHosts = {localhost, 'localhost', '::1'};
 
 bool _isLoopbackHost(String host) =>
-    _loopbackHosts.contains(host) || host.startsWith('127.');
+    _loopbackHosts.contains(host) ||
+    (InternetAddress.tryParse(host)?.isLoopback ?? false);
 
 class FlClashHttpOverrides extends HttpOverrides {
   final ProviderContainer _container;
