@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/core/desktop/model.dart';
 import 'package:fl_clash/core/interface.dart';
+import 'package:fl_clash/core/method.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/action.dart';
@@ -953,6 +954,54 @@ void main() {
       expect(container.read(totalTrafficProvider), const Traffic());
       expect(action.resetCoreTrafficCount, 0);
     });
+
+    test('starting a core that is gone brings the process back', () async {
+      final coreAction = _RestartRecordingCoreAction();
+      late _RaceSetupAction action;
+      final container = ProviderContainer(
+        overrides: [
+          initProvider.overrideWithBuild((_, _) => true),
+          coreActionProvider.overrideWith(() => coreAction),
+          commonActionProvider.overrideWith(_RaceCommonAction.new),
+          setupActionProvider.overrideWith(() {
+            action = _RaceSetupAction();
+            return action;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(setupActionProvider);
+      action.startError = const CoreMethodException(
+        code: 'transport_disconnected',
+        message: 'the core is gone',
+      );
+
+      expect(await action.setRunning(true), isTrue);
+
+      expect(coreAction.restartCount, 1);
+      expect(action.transitions, [true]);
+    });
+
+    test('starting a connected core still toggles the listener', () async {
+      final coreAction = _RestartRecordingCoreAction();
+      final container = ProviderContainer(
+        overrides: [
+          initProvider.overrideWithBuild((_, _) => true),
+          coreActionProvider.overrideWith(() => coreAction),
+          commonActionProvider.overrideWith(_RaceCommonAction.new),
+          setupActionProvider.overrideWith(_RaceSetupAction.new),
+        ],
+      );
+      addTearDown(container.dispose);
+      final action =
+          container.read(setupActionProvider.notifier) as _RaceSetupAction;
+      container.read(coreStatusProvider.notifier).value = CoreStatus.connected;
+
+      expect(await action.setRunning(true), isTrue);
+
+      expect(coreAction.restartCount, 0);
+      expect(action.transitions, [true]);
+    });
   });
 }
 
@@ -1070,6 +1119,7 @@ class _RaceSetupAction extends SetupAction {
   final transitions = <bool>[];
   Completer<bool>? startCompleter;
   Completer<bool>? stopCompleter;
+  Exception? startError;
 
   @override
   void applyProfileDebounce({bool silence = false, bool force = false}) {
@@ -1079,6 +1129,10 @@ class _RaceSetupAction extends SetupAction {
   @override
   Future<bool> setCoreRunning(bool running) async {
     transitions.add(running);
+    final startError = this.startError;
+    if (running && startError != null) {
+      throw startError;
+    }
     return running
         ? await startCompleter?.future ?? true
         : await stopCompleter?.future ?? true;

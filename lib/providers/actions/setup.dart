@@ -192,8 +192,15 @@ class SetupAction extends _$SetupAction {
 
     try {
       await _setCoreRunning(request);
-    } catch (_) {
+    } catch (error) {
       _rollbackRunning(request);
+      if (error is CoreMethodException && error.isCoreUnavailable) {
+        // The Core process is gone, so a start press is the user asking for the
+        // proxy: bring it back instead of failing on a listener that can never
+        // answer. The restart applies the profile itself, and its own start
+        // takes the initialize path, which is what keeps this from looping.
+        return ref.read(coreActionProvider.notifier).restartCore();
+      }
       rethrow;
     }
     if (_isCurrent(request)) {
