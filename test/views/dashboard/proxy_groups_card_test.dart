@@ -173,6 +173,46 @@ void main() {
     await expectWheelRestsOnRow(tester);
   });
 
+  testWidgets('reveals a selection that arrives after the pane opens', (
+    tester,
+  ) async {
+    final group = _group('Nodes', [
+      for (var index = 0; index < 30; index++) 'N$index',
+    ]);
+    container.read(groupsProvider.notifier).value = [group];
+    await pumpCard(tester);
+
+    await tester.tap(find.text('Nodes', findRichText: true));
+    await tester.pumpAndSettle();
+    expect(tester.any(find.text('N29', findRichText: true)), isFalse);
+
+    container.read(groupsProvider.notifier).value = [
+      group.copyWith(now: 'N29'),
+    ];
+    await tester.pumpAndSettle();
+
+    expect(tester.any(find.text('N29', findRichText: true)), isTrue);
+  });
+
+  testWidgets('reveals the first node when the selection moves back to it', (
+    tester,
+  ) async {
+    final group = _group('Nodes', [
+      for (var index = 0; index < 30; index++) 'N$index',
+    ]).copyWith(now: 'N29');
+    container.read(groupsProvider.notifier).value = [group];
+    await pumpCard(tester);
+
+    await tester.tap(find.text('Nodes', findRichText: true));
+    await tester.pumpAndSettle();
+    expect(tester.any(find.text('N0', findRichText: true)), isFalse);
+
+    container.read(groupsProvider.notifier).value = [group.copyWith(now: 'N0')];
+    await tester.pumpAndSettle();
+
+    expect(tester.any(find.text('N0', findRichText: true)), isTrue);
+  });
+
   testWidgets('a tapped group swaps in its nodes and back again', (
     tester,
   ) async {

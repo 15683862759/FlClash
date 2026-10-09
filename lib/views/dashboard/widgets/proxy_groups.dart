@@ -147,7 +147,7 @@ class _ProxiesPane extends ConsumerStatefulWidget {
 
 class _ProxiesPaneState extends ConsumerState<_ProxiesPane> {
   final _controller = RowSnapScrollController();
-  var _revealedSelected = false;
+  String? _revealedSelectedName;
 
   @override
   void dispose() {
@@ -155,18 +155,20 @@ class _ProxiesPaneState extends ConsumerState<_ProxiesPane> {
     super.dispose();
   }
 
-  void _revealSelected(double itemExtent) {
-    if (_revealedSelected) {
+  void _revealSelected(double itemExtent, String? selected) {
+    if (_revealedSelectedName == selected) {
       return;
     }
-    _revealedSelected = true;
-    final selected = ref.read(selectedProxyNameProvider(widget.group.name));
+    if (selected == null || selected.isEmpty) {
+      return;
+    }
     final index = widget.group.all.indexWhere(
       (proxy) => proxy.name == selected,
     );
-    if (index <= 0) {
+    if (index < 0) {
       return;
     }
+    _revealedSelectedName = selected;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_controller.hasClients) {
         return;
@@ -217,7 +219,7 @@ class _ProxiesPaneState extends ConsumerState<_ProxiesPane> {
         builder: (_, rowHeight, spacing) {
           final itemExtent = rowHeight + spacing;
           _controller.itemExtent = itemExtent;
-          _revealSelected(itemExtent);
+          _revealSelected(itemExtent, selected);
           return ListView.builder(
             controller: _controller,
             padding: EdgeInsets.zero,
