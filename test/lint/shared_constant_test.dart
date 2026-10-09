@@ -94,6 +94,59 @@ void main() {
       reason: 'the guard the app waits with must cover the sweep the core runs',
     );
   });
+
+  test('the app and the helper agree on how they talk', () {
+    final app = File('lib/common/constant.dart').readAsStringSync();
+    final hub = File('services/helper/src/service/hub.rs').readAsStringSync();
+    final linux = File(
+      'services/helper/src/service/linux.rs',
+    ).readAsStringSync();
+    final windows = File(
+      'services/helper/src/service/windows.rs',
+    ).readAsStringSync();
+
+    expect(
+      _dartConst(app, 'helperProtocolVersionHeader'),
+      _rustConst(hub, 'PROTOCOL_VERSION_HEADER'),
+      reason: 'the app must send the header the helper reads',
+    );
+    expect(
+      _dartConst(app, 'helperProtocolVersion'),
+      _rustConst(hub, 'PROTOCOL_VERSION'),
+      reason: 'a version the helper does not answer makes it unreachable',
+    );
+    expect(
+      _dartIntConst(app, 'helperPort'),
+      _rustIntConst(hub, 'LISTEN_PORT'),
+      reason: 'the app dials the port the helper listens on',
+    );
+    expect(
+      _dartConst(app, 'helperSocketPath'),
+      _rustConst(linux, 'SOCKET_PATH'),
+      reason: 'the app connects to the socket the helper owns',
+    );
+    expect(
+      _dartConst(app, 'appHelperService'),
+      _rustConst(windows, 'SERVICE_NAME'),
+      reason: 'the app installs the service the helper registers',
+    );
+  });
+}
+
+String _rustConst(String source, String name) {
+  final match = RegExp('const $name: &str = "([^"]+)"').firstMatch(source);
+  if (match == null) {
+    fail('could not read $name from the helper sources');
+  }
+  return match.group(1)!;
+}
+
+int _rustIntConst(String source, String name) {
+  final match = RegExp('const $name: u16 = (\\d+)').firstMatch(source);
+  if (match == null) {
+    fail('could not read $name from the helper sources');
+  }
+  return int.parse(match.group(1)!);
 }
 
 int _dartIntConst(String source, String name) {
