@@ -321,7 +321,11 @@ flutter test --reporter expanded --coverage
 dart run tool/check_coverage.dart coverage/lcov.info 75
 ```
 
-Run `flutter analyze` before committing; CI fails on anything it reports.
+Run `flutter analyze` before committing; CI fails on anything it reports. On Windows a
+checkout whose path holds non-ASCII characters can make `flutter analyze` exit 255 before
+it reports anything, because the analysis server throws while reading its own LSP
+response (`FormatException` naming the percent-encoded workspace path); `dart analyze`
+asks the same questions with the same options and still answers there.
 
 Release builds run only for `v*` tag pushes; pull requests trigger nothing.
 Root analysis excludes `plugins/**`, and root tests do not discover nested
