@@ -985,6 +985,36 @@ void main() {
       expect(container.read(isStartProvider), isTrue);
     });
 
+    test('a core that keeps dying is restarted once, then reported', () async {
+      final coreAction = _RestartRecordingCoreAction();
+      late _RaceSetupAction action;
+      final container = ProviderContainer(
+        overrides: [
+          initProvider.overrideWithBuild((_, _) => true),
+          coreActionProvider.overrideWith(() => coreAction),
+          commonActionProvider.overrideWith(_RaceCommonAction.new),
+          setupActionProvider.overrideWith(() {
+            action = _RaceSetupAction();
+            return action;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(setupActionProvider);
+      action.startError = const CoreMethodException(
+        code: 'transport_disconnected',
+        message: 'the core is gone',
+      );
+      action.startErrorPersists = true;
+
+      await expectLater(
+        action.setRunning(true),
+        throwsA(isA<CoreMethodException>()),
+      );
+
+      expect(coreAction.restartCount, 1);
+    });
+
     test('starting a connected core still toggles the listener', () async {
       final coreAction = _RestartRecordingCoreAction();
       final container = ProviderContainer(
@@ -1123,6 +1153,7 @@ class _RaceSetupAction extends SetupAction {
   Completer<bool>? startCompleter;
   Completer<bool>? stopCompleter;
   Exception? startError;
+  bool startErrorPersists = false;
 
   @override
   void applyProfileDebounce({bool silence = false, bool force = false}) {
@@ -1134,7 +1165,9 @@ class _RaceSetupAction extends SetupAction {
     transitions.add(running);
     final startError = this.startError;
     if (running && startError != null) {
-      this.startError = null;
+      if (!startErrorPersists) {
+        this.startError = null;
+      }
       throw startError;
     }
     return running

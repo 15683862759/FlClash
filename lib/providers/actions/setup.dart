@@ -24,6 +24,7 @@ class SetupAction extends _$SetupAction {
   final _listenerScheduler = SerialTaskScheduler();
   _RunRequest? _latestRunRequest;
   DateTime? _startTime;
+  bool _recoveringLostCore = false;
 
   bool get _isRunning => _startTime != null && _startTime!.isBeforeNow;
 
@@ -197,15 +198,23 @@ class SetupAction extends _$SetupAction {
       if (error is CoreMethodException && error.isCoreUnavailable) {
         // The Core process is gone, so a start press is the user asking for the
         // proxy: bring it back instead of failing on a listener that can never
-        // answer. The restart applies the profile itself, and its own start
-        // takes the initialize path, which is what keeps this from looping.
-        final restarted = await ref
-            .read(coreActionProvider.notifier)
-            .restartCore();
-        // Rolling back cleared the session, so the restart saw nobody waiting
-        // and only applied the profile; ask for the listener now that the Core
-        // answers again.
-        return restarted && await setRunning(true);
+        // answer. A Core that dies again right away must not restart itself
+        // forever, so a recovery never resolves another one.
+        if (_recoveringLostCore) {
+          rethrow;
+        }
+        _recoveringLostCore = true;
+        try {
+          final restarted = await ref
+              .read(coreActionProvider.notifier)
+              .restartCore();
+          // Rolling back cleared the session, so the restart saw nobody waiting
+          // and only applied the profile; ask for the listener now that the
+          // Core answers again.
+          return restarted && await setRunning(true);
+        } finally {
+          _recoveringLostCore = false;
+        }
       }
       rethrow;
     }
