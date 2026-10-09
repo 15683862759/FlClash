@@ -54,14 +54,11 @@ enum GroupType {
   const GroupType(this.value);
 
   static GroupType parse(String type) {
-    return switch (type.toLowerCase()) {
-      'url-test' || 'urltest' => URLTest,
-      'select' || 'selector' => Selector,
-      'fallback' => Fallback,
-      'load-balance' || 'loadbalance' => LoadBalance,
-      'relay' => Relay,
-      String() => throw UnimplementedError(),
-    };
+    final groupType = GroupTypeExtension.getGroupType(type);
+    if (groupType == null) {
+      throw UnimplementedError();
+    }
+    return groupType;
   }
 
   /// The core refuses a relay group, so it stays parseable but unofferable.
@@ -91,19 +88,30 @@ enum LoadBalanceStrategy {
   }
 }
 
+/// Every spelling [GroupType.parse] accepts, resolved without rebuilding a list per call.
+final _groupTypesBySpelling = <String, GroupType>{
+  for (final type in GroupType.values) ...{
+    type.name.toLowerCase(): type,
+    type.value: type,
+  },
+  'urltest': GroupType.URLTest,
+  'selector': GroupType.Selector,
+  'loadbalance': GroupType.LoadBalance,
+};
+
+final _usedProxyNames = List<String>.unmodifiable(
+  UsedProxy.values.map((value) => value.name),
+);
+
 extension GroupTypeExtension on GroupType {
-  static List<String> get valueList =>
-      GroupType.values.map((e) => e.toString().split('.').last).toList();
+  bool get isComputedSelected =>
+      this == GroupType.URLTest || this == GroupType.Fallback;
 
-  bool get isComputedSelected {
-    return [GroupType.URLTest, GroupType.Fallback].contains(this);
-  }
+  static GroupType? getGroupType(String value) =>
+      _groupTypesBySpelling[value.toLowerCase()];
 
-  static GroupType? getGroupType(String value) {
-    final index = GroupTypeExtension.valueList.indexOf(value);
-    if (index == -1) return null;
-    return GroupType.values[index];
-  }
+  static bool isGroupType(Object? value) =>
+      value is String && _groupTypesBySpelling.containsKey(value.toLowerCase());
 }
 
 enum UsedProxy { GLOBAL, DIRECT, REJECT }
@@ -111,8 +119,7 @@ enum UsedProxy { GLOBAL, DIRECT, REJECT }
 enum DelayTestPhase { queued, running }
 
 extension UsedProxyExtension on UsedProxy {
-  static List<String> get valueList =>
-      UsedProxy.values.map((e) => e.toString().split('.').last).toList();
+  static List<String> get valueList => _usedProxyNames;
 
   String get value => UsedProxyExtension.valueList[index];
 }
