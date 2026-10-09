@@ -84,6 +84,42 @@ void main() {
     );
   });
 
+  test('every core call sends the argument shape its handler decodes', () {
+    final app = File('lib/core/interface.dart').readAsStringSync();
+    final constants = File('core/constant.go').readAsStringSync();
+    final core = File('core/method.go').readAsStringSync();
+    final sent = _dartArgumentShapes(app);
+    final decoded = _goArgumentShapes(core, constants);
+
+    expect(sent, isNotEmpty, reason: 'the app calls a core method with args');
+    expect(decoded, isNotEmpty, reason: 'the core decodes method args');
+    final compared = sent.keys.where(decoded.containsKey).length;
+    expect(
+      compared,
+      greaterThanOrEqualTo(20),
+      reason: 'a broken extraction would leave nothing to compare',
+    );
+    final mismatched = <String>[];
+    for (final entry in sent.entries) {
+      final expected = decoded[entry.key];
+      if (expected == null) {
+        continue;
+      }
+      if (expected != entry.value) {
+        mismatched.add(
+          '${entry.key}: app sends ${entry.value}, core $expected',
+        );
+      }
+    }
+    expect(
+      mismatched,
+      isEmpty,
+      reason:
+          'a handler that unmarshals a string cannot read an object, and one '
+          'that unmarshals a struct cannot read a string',
+    );
+  });
+
   test('the app and the core agree on the service sweep budget', () {
     final app = File('lib/common/constant.dart').readAsStringSync();
     final core = File('core/service_check.go').readAsStringSync();
@@ -327,6 +363,105 @@ String _kebab(String name) => name
       (match) => '-${match.group(0)!.toLowerCase()}',
     )
     .replaceFirst(RegExp('^-'), '');
+
+/// The methods the app calls, with the shape of the argument it sends: an
+/// object (a `toJson()` map or a collection held in a local) or a scalar.
+Map<String, String> _dartArgumentShapes(String source) {
+  final structured = _quotedValues(
+    source,
+    r'(?:List|Map|Set)<[^\n]*?>\s+(\w+)',
+  ).union(_quotedValues(source, r'final (\w+) = [<\w, >]*[\{\[]'));
+  final shapes = <String, String>{};
+  for (final match in RegExp(
+    r'method: CoreMethod\.(\w+),\s*arguments: ([^\n]+)',
+  ).allMatches(source)) {
+    final expression = match.group(2)!.trim().replaceFirst(RegExp(r',$'), '');
+    shapes[match.group(1)!] = _isObjectArgument(expression, structured)
+        ? 'object'
+        : 'scalar';
+  }
+  return shapes;
+}
+
+bool _isObjectArgument(String expression, Set<String> structured) {
+  if (expression.startsWith('{') || expression.startsWith('<')) {
+    return true;
+  }
+  return expression.contains('.toJson()') || structured.contains(expression);
+}
+
+/// The methods the core answers with arguments, with the shape their handler
+/// unmarshals the payload into.
+Map<String, String> _goArgumentShapes(String source, String constants) {
+  const scalars = {
+    'string',
+    'bool',
+    'int',
+    'int8',
+    'int16',
+    'int32',
+    'int64',
+    'uint',
+    'uint8',
+    'uint16',
+    'uint32',
+    'uint64',
+    'float32',
+    'float64',
+  };
+  final names = <String, String>{};
+  for (final match in RegExp(
+    r'^\s*(\w+Method)\s+CoreMethod\s*=\s*"([^"]+)"',
+    multiLine: true,
+  ).allMatches(constants)) {
+    names[match.group(1)!] = match.group(2)!;
+  }
+  final shapes = <String, String>{};
+  // Each handler entry ends where the next one starts, so a handler that takes
+  // no arguments cannot pick up the parameter type of the entry after it.
+  final entries = RegExp(
+    r'^\t(\w+Method):',
+    multiLine: true,
+  ).allMatches(source).toList();
+  for (var index = 0; index < entries.length; index++) {
+    final entry = entries[index];
+    final name = entry.group(1)!;
+    final method = names[name];
+    if (method == null) {
+      fail('could not read $name from the core sources');
+    }
+    final end = index + 1 < entries.length ? entries[index + 1].start : null;
+    final body = source.substring(entry.end, end);
+    final parameter = RegExp(
+      r'func\((\w+)\s+\*([^\s,]+)\s*,\s*response\b',
+    ).firstMatch(body);
+    if (parameter == null) {
+      continue;
+    }
+    final type = parameter.group(2)!;
+    if (type != 'MethodCall') {
+      shapes[method] = _isScalarType(type, scalars) ? 'scalar' : 'object';
+      continue;
+    }
+    // A raw handler decodes one variable of its own.
+    final variable = RegExp(
+      r'var (\w+) (\w+)[\s\S]*?decodeMethodArguments\(call, response, &(\w+)\)',
+    ).firstMatch(body);
+    if (variable == null) {
+      continue;
+    }
+    if (variable.group(1) != variable.group(3)) {
+      fail('$name decodes ${variable.group(3)}, not ${variable.group(1)}');
+    }
+    shapes[method] = _isScalarType(variable.group(2)!, scalars)
+        ? 'scalar'
+        : 'object';
+  }
+  return shapes;
+}
+
+bool _isScalarType(String type, Set<String> scalars) =>
+    scalars.contains(type.replaceFirst(RegExp(r'^\[\]'), ''));
 
 /// The names the fields of a Go struct are encoded under.
 Set<String> _goJsonTags(String source, String name) {
