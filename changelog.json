@@ -2,6 +2,99 @@
   "schemaVersion": 2,
   "versions": [
     {
+      "version": "0.8.113",
+      "tag": "v0.8.113",
+      "date": "2026-10-10",
+      "prerelease": false,
+      "groups": [
+        {
+          "type": "fix",
+          "entries": [
+            {
+              "id": "96a97e6",
+              "scope": "macos",
+              "text": "Turn the macOS system proxy on and off from a machine that is not set to English"
+            },
+            {
+              "id": "4b2dac2",
+              "scope": "macos",
+              "text": "Patch the macOS system DNS on a machine that is not set to English"
+            },
+            {
+              "id": "04efa66",
+              "scope": "core",
+              "text": "Keep a measured node instead of switching to one the group has not tested yet"
+            },
+            {
+              "id": "c1acb9e",
+              "scope": "core",
+              "text": "Starting again after a crashed core brings it back instead of failing"
+            },
+            {
+              "id": "016b05d",
+              "scope": "core",
+              "text": "A crashed core no longer leaves the app looking connected"
+            },
+            {
+              "id": "4dc84dd",
+              "scope": "common",
+              "text": "A subscription that stops responding no longer leaves its update hanging"
+            },
+            {
+              "id": "b9daec5",
+              "scope": "bootstrap",
+              "text": "Declining the disclaimer is no longer remembered as accepting it"
+            },
+            {
+              "id": "0146895",
+              "scope": "profiles",
+              "text": "A subscription that fails to update retries with a growing delay instead of every five minutes"
+            },
+            {
+              "id": "1fcc9df",
+              "scope": "profiles",
+              "text": "An auto-update interval of zero minutes no longer re-downloads a subscription"
+            },
+            {
+              "id": "9d1ce7d",
+              "scope": "core",
+              "text": "Follow a subscription update at once instead of keeping a node the new list dropped"
+            },
+            {
+              "id": "e4b6ce9",
+              "scope": "editor",
+              "text": "Complete proxy names inside a quoted list member again"
+            },
+            {
+              "id": "f51c75f",
+              "scope": "editor",
+              "text": "Complete node names again on a config line that quotes a hash"
+            },
+            {
+              "id": "30f8ffd",
+              "scope": "editor",
+              "text": "Keep a quoted config value whole in editor completions"
+            },
+            {
+              "id": "eb6f915",
+              "scope": "common",
+              "text": "Keep localhost URLs out of the proxy"
+            },
+            {
+              "id": "43886cc",
+              "scope": "views",
+              "text": "The proxy list follows a group's node when the selection changes"
+            },
+            {
+              "id": "7c3a3a8",
+              "scope": "proxies",
+              "text": "Keep a group's live node selected after its saved pick disappears"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.8.112",
       "tag": "v0.8.112",
       "date": "2026-10-09",

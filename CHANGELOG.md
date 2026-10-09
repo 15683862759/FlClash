@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.8.113 (2026-10-10)
+
+**Bug Fixes**
+
+- **macos** Turn the macOS system proxy on and off from a machine that is not set to English (96a97e6)
+- **macos** Patch the macOS system DNS on a machine that is not set to English (4b2dac2)
+- **core** Keep a measured node instead of switching to one the group has not tested yet (04efa66)
+- **core** Starting again after a crashed core brings it back instead of failing (c1acb9e)
+- **core** A crashed core no longer leaves the app looking connected (016b05d)
+- **common** A subscription that stops responding no longer leaves its update hanging (4dc84dd)
+- **bootstrap** Declining the disclaimer is no longer remembered as accepting it (b9daec5)
+- **profiles** A subscription that fails to update retries with a growing delay instead of every five minutes (0146895)
+- **profiles** An auto-update interval of zero minutes no longer re-downloads a subscription (1fcc9df)
+- **core** Follow a subscription update at once instead of keeping a node the new list dropped (9d1ce7d)
+- **editor** Complete proxy names inside a quoted list member again (e4b6ce9)
+- **editor** Complete node names again on a config line that quotes a hash (f51c75f)
+- **editor** Keep a quoted config value whole in editor completions (30f8ffd)
+- **common** Keep localhost URLs out of the proxy (eb6f915)
+- **views** The proxy list follows a group's node when the selection changes (43886cc)
+- **proxies** Keep a group's live node selected after its saved pick disappears (7c3a3a8)
+
 ## v0.8.112 (2026-10-09)
 
 **Bug Fixes**
