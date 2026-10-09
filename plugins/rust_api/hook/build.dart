@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:code_assets/code_assets.dart';
 import 'package:flutter_rust_bridge_hooks/flutter_rust_bridge_hooks.dart';
+import 'package:rust_api/src/bindgen_libclang.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
@@ -16,8 +17,7 @@ void main(List<String> args) async {
   });
 }
 
-// rquickjs runs bindgen on Android, which must load the NDK's libclang; Linux
-// NDKs before r26 keep it under lib64, later ones and every macOS NDK under lib.
+// rquickjs runs bindgen on Android, which must load a libclang.
 Map<String, String> _bindgenEnvironment(BuildInput input) {
   if (!input.config.buildCodeAssets ||
       input.config.code.targetOS != OS.android) {
@@ -27,21 +27,16 @@ Map<String, String> _bindgenEnvironment(BuildInput input) {
   if (compiler == null) {
     return const {};
   }
-  final llvmRoot = File.fromUri(compiler).parent.parent;
-  for (final name in const ['lib', 'lib64']) {
-    final directory = Directory(
-      '${llvmRoot.path}${Platform.pathSeparator}$name',
-    );
-    if (directory.existsSync() && directory.listSync().any(_isLibclang)) {
-      return {'LIBCLANG_PATH': directory.path};
-    }
-  }
-  throw StateError(
-    'No libclang under ${llvmRoot.path} (lib or lib64); the NDK Flutter '
-    'passed cannot run bindgen for rquickjs',
+  final directory = libclangDirectory(
+    compilerPath: compiler.toFilePath(),
+    override: Platform.environment['LIBCLANG_PATH'],
   );
-}
-
-bool _isLibclang(FileSystemEntity entity) {
-  return entity.path.split(Platform.pathSeparator).last.startsWith('libclang.');
+  if (directory == null) {
+    throw StateError(
+      'No libclang for bindgen: neither LIBCLANG_PATH nor the NDK Flutter '
+      'passed ($compiler) holds one. Windows NDKs from r27 keep none, so point '
+      'LIBCLANG_PATH at an LLVM installation that ships libclang.',
+    );
+  }
+  return {'LIBCLANG_PATH': directory};
 }
