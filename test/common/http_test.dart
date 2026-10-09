@@ -60,12 +60,30 @@ void main() {
   test('loopback traffic always bypasses the proxy', () {
     final container = buildContainer();
 
+    for (final raw in [
+      'http://$localhost:9090/ui',
+      'http://localhost:9090/ui',
+      'http://LOCALHOST:25500/sub',
+      'http://[::1]:9090/ui',
+      'http://127.1.2.3:8080/',
+    ]) {
+      expect(
+        FlClashHttpOverrides.findProxyFor(container, Uri.parse(raw)),
+        'DIRECT',
+        reason: raw,
+      );
+    }
+  });
+
+  test('a loopback-looking name that is not this machine keeps its proxy', () {
+    final container = buildContainer(mixedPort: 7891);
+
     expect(
       FlClashHttpOverrides.findProxyFor(
         container,
-        Uri.parse('http://$localhost:9090/ui'),
+        Uri.parse('http://localtest.me:8080/'),
       ),
-      'DIRECT',
+      'PROXY localhost:7891',
     );
   });
 

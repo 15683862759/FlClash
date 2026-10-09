@@ -7,6 +7,13 @@ import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Loopback spellings a URL may use for this machine, plus the whole 127/8
+/// range `defaultBypassDomain` already treats as local.
+const _loopbackHosts = {localhost, 'localhost', '::1'};
+
+bool _isLoopbackHost(String host) =>
+    _loopbackHosts.contains(host) || host.startsWith('127.');
+
 class FlClashHttpOverrides extends HttpOverrides {
   final ProviderContainer _container;
 
@@ -17,7 +24,7 @@ class FlClashHttpOverrides extends HttpOverrides {
   }
 
   static String findProxyForReader(ProviderReader read, Uri url) {
-    if ([localhost].contains(url.host)) {
+    if (_isLoopbackHost(url.host)) {
       return 'DIRECT';
     }
     final isStart = read(isStartProvider);
