@@ -35,7 +35,8 @@ Map<String, String> _bindgenEnvironment(BuildInput input) {
     throw StateError(
       'No libclang for bindgen: neither LIBCLANG_PATH nor the NDK Flutter '
       'passed ($compiler) holds one. Windows NDKs from r27 keep none, so point '
-      'LIBCLANG_PATH at an LLVM installation that ships libclang.',
+      'LIBCLANG_PATH at a complete LLVM installation: bindgen also resolves '
+      "clang's own headers from it, which a bare libclang.dll cannot serve.",
     );
   }
   return {'LIBCLANG_PATH': directory};

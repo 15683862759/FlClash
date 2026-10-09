@@ -238,9 +238,11 @@ fails, and the VPN/state tests under `android/tests/` do not depend on it.
 
 That `rust_api` step also runs bindgen, which needs a libclang of its own: the Linux and macOS
 NDKs carry one, but the Windows NDKs from r27 on carry none, so a Windows host stops with
-`No libclang for bindgen` until `LIBCLANG_PATH` names a directory holding `libclang.dll` (an LLVM
-installation provides one). Everything else the Android Rust build needs comes from the NDK
-Flutter passes.
+`No libclang for bindgen` until `LIBCLANG_PATH` names a directory holding `libclang.dll`. Name a
+complete LLVM installation rather than a bare `libclang.dll` (the one the `libclang` wheel ships,
+for instance): bindgen resolves clang's own headers from the installation too, and without them
+the build stops at `'stdbool.h' file not found` however the DLL is laid out. Everything else the
+Android Rust build needs comes from the NDK Flutter passes.
 
 ## Changelog And Release
 
