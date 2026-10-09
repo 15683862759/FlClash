@@ -51,7 +51,7 @@ class ClashCompletionSource {
 
   CodeForgeCompletion? call(CodeForgeCompletionRequest request) {
     final before = request.textBeforeCaret;
-    if (before.contains(' #') || before.trimLeft().startsWith('#')) {
+    if (yamlCommentIndex(before) >= 0) {
       return null;
     }
     final match = _caretLinePattern.firstMatch(before)!;

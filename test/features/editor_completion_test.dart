@@ -243,6 +243,19 @@ void main() {
       expect(_complete('# mix|'), isNull);
       expect(_complete('mode: rule # gl|'), isNull);
     });
+
+    test('completes on a line that keeps a hash inside quotes', () {
+      final completion = _complete(
+        'proxies:\n'
+        '  - name: node-a\n'
+        '    type: vmess\n'
+        'proxy-groups:\n'
+        '  - name: Proxy\n'
+        '    type: select\n'
+        '    proxies: ["HK #1", no|]',
+      );
+      expect(_labels(completion), contains('node-a'));
+    });
   });
 
   group('script', () {

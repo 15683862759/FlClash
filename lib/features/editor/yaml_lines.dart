@@ -55,20 +55,44 @@ class YamlLine {
 
 String unquoteYaml(String text) {
   var value = text.trim();
-  // A ' #' inside a quoted scalar is data, so it is unwrapped before the comment runs.
-  final quoted = _quotedSpan(value);
-  if (quoted != null) {
-    return quoted;
-  }
-  if (value.startsWith('#')) {
-    return '';
-  }
-  final comment = value.indexOf(' #');
+  final comment = yamlCommentIndex(value);
   if (comment >= 0) {
     value = value.substring(0, comment).trimRight();
   }
   return _quotedSpan(value) ?? value;
 }
+
+int yamlCommentIndex(String text) {
+  var quote = '';
+  for (var index = 0; index < text.length; index++) {
+    final char = text[index];
+    if (quote.isNotEmpty) {
+      if (char == quote) {
+        quote = '';
+      } else if (char == r'\' && quote == '"') {
+        index++;
+      }
+      continue;
+    }
+    if (char == '#') {
+      if (index == 0 || _isCommentSpace(text.codeUnitAt(index - 1))) {
+        return index;
+      }
+      continue;
+    }
+    // A quote opens a scalar only after a separator, so `it's` stays plain.
+    if ((char == "'" || char == '"') && _opensQuotedScalar(text, index)) {
+      quote = char;
+    }
+  }
+  return -1;
+}
+
+bool _isCommentSpace(int codeUnit) => codeUnit == 0x20 || codeUnit == 0x09;
+
+bool _opensQuotedScalar(String text, int index) =>
+    index == 0 ||
+    const {' ', ':', ',', '[', '{', '-'}.contains(text[index - 1]);
 
 String? _quotedSpan(String value) {
   if (value.length < 2) {
