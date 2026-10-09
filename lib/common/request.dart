@@ -7,6 +7,10 @@ import 'package:dio/io.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/state.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
+const _requestConnectTimeout = Duration(seconds: 15);
+const _requestReceiveTimeout = Duration(seconds: 60);
 
 class Request {
   late final Dio dio;
@@ -19,9 +23,26 @@ class Request {
     _read = read;
   }
 
-  Request() {
-    dio = Dio(BaseOptions(headers: {'User-Agent': browserUa}));
-    _clashDio = Dio();
+  /// A server that accepts the connection and then says nothing must not hold a
+  /// subscription update open for good; the receive timeout only measures the
+  /// gap between two chunks, so a slow download still completes.
+  Request({
+    Duration connectTimeout = _requestConnectTimeout,
+    Duration receiveTimeout = _requestReceiveTimeout,
+  }) {
+    dio = Dio(
+      BaseOptions(
+        headers: {'User-Agent': browserUa},
+        connectTimeout: connectTimeout,
+        receiveTimeout: receiveTimeout,
+      ),
+    );
+    _clashDio = Dio(
+      BaseOptions(
+        connectTimeout: connectTimeout,
+        receiveTimeout: receiveTimeout,
+      ),
+    );
     _clashDio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
@@ -37,6 +58,9 @@ class Request {
       },
     );
   }
+
+  @visibleForTesting
+  Dio get clashDio => _clashDio;
 
   Future<Response<Uint8List>> getFileResponseForUrl(String url) async {
     try {
