@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fl_clash/common/constant.dart';
 import 'package:test/test.dart';
 
 /// The app and the core each keep a copy of the browser user agent and the default test URL.
@@ -21,6 +22,20 @@ void main() {
       _goConst(core, 'defaultTestURL'),
       reason: 'defaultTestUrl and defaultTestURL must stay in step',
     );
+  });
+
+  test('the editor suggests the default test URL', () {
+    final schema = File(
+      'lib/features/editor/clash_schema.dart',
+    ).readAsStringSync();
+    final suggested = RegExp(
+      r"'url': YamlSchema\.scalar\(\['([^']+)'\]\)",
+    ).allMatches(schema).map((match) => match.group(1)).toList();
+
+    expect(suggested, isNotEmpty);
+    for (final url in suggested) {
+      expect(url, defaultTestUrl, reason: 'the schema suggests $url');
+    }
   });
 }
 
