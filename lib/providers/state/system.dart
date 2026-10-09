@@ -90,7 +90,7 @@ Map<String, Map<String, int>> trayDelays(Ref ref) {
   }
   final realStates = <String, SelectedProxyState>{};
   for (final group in groups) {
-    final groupWithNow = allGroups.getGroup(group.name) ?? group;
+    final groupWithNow = groupsByName[group.name] ?? group;
     final testUrl = group.testUrl.takeFirstValid([defaultTestUrl]);
     final selectedName = resolveSelectedProxyName(
       groupWithNow,

@@ -237,7 +237,7 @@ List<Group> computeHideTimeout({
   final proxyTypes = _proxyTypesFor(allGroups);
   return groups.map((group) {
     final groupTestUrl = group.testUrl.takeFirstValid([defaultTestUrl]);
-    final groupWithNow = allGroups.getGroup(group.name) ?? group;
+    final groupWithNow = groupsByName[group.name] ?? group;
     final selectedName = resolveSelectedProxyName(
       groupWithNow,
       selectedMap[group.name],
