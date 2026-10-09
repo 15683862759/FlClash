@@ -6,6 +6,7 @@ class _FakePort implements SystemDnsPort {
 
   String? service = 'Wi-Fi';
   List<String> servers;
+  bool readable = true;
   bool writeSucceeds = true;
   Duration delay = Duration.zero;
 
@@ -21,7 +22,7 @@ class _FakePort implements SystemDnsPort {
   @override
   Future<List<String>?> readDnsServers(String service) => _guard(() async {
     reads++;
-    return List.of(servers);
+    return readable ? List.of(servers) : null;
   });
 
   @override
@@ -286,6 +287,21 @@ void main() {
 
     expect(port.writes, isEmpty);
     expect(store.record, isNull);
+  });
+
+  test('leaves the service alone when its servers cannot be read', () async {
+    // `networksetup` answers a service it cannot describe — a translated
+    // notice, a hostname `parseDnsServers` does not trust — with null, and
+    // patching anyway would overwrite a list the app never saw.
+    final port = _FakePort()..readable = false;
+    final store = _FakeStore();
+    final coordinator = _coordinator(port, store);
+
+    await coordinator.sync(true);
+
+    expect(port.writes, isEmpty);
+    expect(store.record, isNull);
+    expect(store.writeCount, 0);
   });
 
   test('serializes overlapping requests onto the last intent', () async {

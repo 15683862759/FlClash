@@ -508,12 +508,36 @@ class MacOS implements SystemDnsPort {
   }
 
   @visibleForTesting
-  static List<String> parseDnsServers(String getDnsServersOutput) {
-    final output = getDnsServersOutput.trim();
-    if (output.startsWith("There aren't any DNS Servers set on")) {
-      return [];
+  static List<String>? parseDnsServers(String getDnsServersOutput) {
+    // `networksetup` answers with one address per line, or with a sentence when
+    // the service has none — and that sentence is written in the system
+    // language. An address check decides which of the two this is, so the
+    // wording never matters; an output that is neither is reported as
+    // unreadable, which leaves the service alone instead of handing prose to
+    // `-setdnsservers`.
+    final lines = getDnsServersOutput
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    if (lines.isEmpty) {
+      return null;
     }
-    return output.split('\n');
+    if (lines.every(_isDnsServer)) {
+      return lines;
+    }
+    // "There aren't any DNS Servers set on Wi-Fi." and its translations: one
+    // sentence, so a space no address ever carries.
+    if (lines.length == 1 && lines.single.contains(' ')) {
+      return const [];
+    }
+    return null;
+  }
+
+  /// A DNS server as `networksetup` prints it: an address, possibly scoped.
+  static bool _isDnsServer(String line) {
+    final address = InternetAddress.tryParse(line.split('%').first);
+    return address != null;
   }
 
   @override

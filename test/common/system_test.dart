@@ -427,6 +427,12 @@ void main() {
         MacOS.parseDnsServers("There aren't any DNS Servers set on Wi-Fi.\n"),
         isEmpty,
       );
+      // The notice is written in the system language.
+      expect(MacOS.parseDnsServers('在 Wi-Fi 上没有设置任何 DNS 服务器。\n'), isEmpty);
+      expect(
+        MacOS.parseDnsServers('Es sind keine DNS-Server auf Wi-Fi gesetzt.\n'),
+        isEmpty,
+      );
     });
 
     test('splits a configured list', () {
@@ -434,6 +440,16 @@ void main() {
         '1.1.1.1',
         '8.8.8.8',
       ]);
+    });
+
+    test('keeps a scoped IPv6 server whole', () {
+      expect(MacOS.parseDnsServers('fe80::1%en0\n'), ['fe80::1%en0']);
+    });
+
+    test('reports an output it cannot read rather than a server', () {
+      expect(MacOS.parseDnsServers('notanaddress\n'), isNull);
+      expect(MacOS.parseDnsServers('1.1.1.1\nWi-Fi\n'), isNull);
+      expect(MacOS.parseDnsServers('\n'), isNull);
     });
   });
 
