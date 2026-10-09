@@ -24,6 +24,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_color_utilities/palettes/tonal_palette.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+/// Consent is recorded only after it was given: a refusal ends the session, and
+/// on Android that pop returns instead of killing the isolate.
+Future<void> resolveDisclaimerConsent({
+  required bool accepted,
+  required Future<void> Function() exit,
+  required void Function() record,
+}) async {
+  if (!accepted) {
+    await exit();
+    return;
+  }
+  record();
+}
+
 class Bootstrap {
   static Bootstrap? _instance;
 
@@ -269,12 +283,13 @@ class Bootstrap {
       return;
     }
     final isDisclaimerAccepted = await requestDisclaimerConsent();
-    if (!isDisclaimerAccepted) {
-      await _container.read(systemActionProvider.notifier).handleExit();
-    }
-    _container
-        .read(appSettingProvider.notifier)
-        .update((state) => state.copyWith(disclaimerAccepted: true));
+    await resolveDisclaimerConsent(
+      accepted: isDisclaimerAccepted,
+      exit: () => _container.read(systemActionProvider.notifier).handleExit(),
+      record: () => _container
+          .read(appSettingProvider.notifier)
+          .update((state) => state.copyWith(disclaimerAccepted: true)),
+    );
   }
 }
 
