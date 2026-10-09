@@ -5,7 +5,6 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'generated/database.g.dart';
@@ -73,11 +72,6 @@ mixin OptimisticMixin<T> on AsyncNotifierMixin<T> {
 @riverpod
 Stream<List<Profile>> profilesStream(Ref ref) {
   return database.profilesDao.query().watch();
-}
-
-@riverpod
-Stream<List<Rule>> addedRulesStream(Ref ref, int profileId) {
-  return database.rulesDao.queryAddedRules(profileId).watch();
 }
 
 @riverpod
@@ -327,17 +321,6 @@ class ClashProviders extends _$ClashProviders
   ) {
     return !clashProviderListEquality.equals(previous.value, next.value);
   }
-}
-
-@riverpod
-Future<Script?> script(Ref ref, int? scriptId) async {
-  final script = ref.watch(
-    scriptsProvider.future.select((state) async {
-      final scripts = await state;
-      return scripts.get(scriptId);
-    }),
-  );
-  return script;
 }
 
 mixin RuleListMixin on OptimisticMixin<List<Rule>> {

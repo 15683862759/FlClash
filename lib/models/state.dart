@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -164,62 +163,10 @@ abstract class ProxiesTabControllerState with _$ProxiesTabControllerState {
 }
 
 @freezed
-abstract class ProxyGroupSelectorState with _$ProxyGroupSelectorState {
-  const factory ProxyGroupSelectorState({
-    required String? testUrl,
-    required ProxiesSortType proxiesSortType,
-    required ProxyCardType proxyCardType,
-    required num sortNum,
-    required GroupType groupType,
-    required List<Proxy> proxies,
-  }) = _ProxyGroupSelectorState;
-}
-
-@freezed
 abstract class MoreToolsSelectorState with _$MoreToolsSelectorState {
   const factory MoreToolsSelectorState({
     required List<NavigationItem> navigationItems,
   }) = _MoreToolsSelectorState;
-}
-
-@freezed
-abstract class PackageListSelectorState with _$PackageListSelectorState {
-  const factory PackageListSelectorState({
-    required List<Package> packages,
-    required AccessControlProps accessControlProps,
-  }) = _PackageListSelectorState;
-}
-
-extension PackageListSelectorStateExt on PackageListSelectorState {
-  List<Package> get list {
-    final isFilterSystemApp = accessControlProps.isFilterSystemApp;
-    final isFilterNonInternetApp = accessControlProps.isFilterNonInternetApp;
-    return packages
-        .where(
-          (item) =>
-              (isFilterSystemApp ? item.system == false : true) &&
-              (isFilterNonInternetApp ? item.internet == true : true),
-        )
-        .toList();
-  }
-
-  List<Package> getSortList(List<String> selectedList) {
-    final sort = accessControlProps.sort;
-
-    return list.sorted((a, b) {
-      final isSelectA = selectedList.contains(a.packageName);
-      final isSelectB = selectedList.contains(b.packageName);
-
-      if (isSelectA != isSelectB) {
-        return isSelectA ? -1 : 1;
-      }
-      return switch (sort) {
-        AccessSortType.none => 0,
-        AccessSortType.name => a.label.compareTo(b.label),
-        AccessSortType.time => b.lastUpdateTime.compareTo(a.lastUpdateTime),
-      };
-    });
-  }
 }
 
 @freezed
@@ -229,15 +176,6 @@ abstract class ProxiesListHeaderSelectorState
     required double offset,
     required int currentIndex,
   }) = _ProxiesListHeaderSelectorState;
-}
-
-@freezed
-abstract class ProxiesActionsState with _$ProxiesActionsState {
-  const factory ProxiesActionsState({
-    required PageLabel pageLabel,
-    required ProxiesType type,
-    required bool hasProviders,
-  }) = _ProxiesActionsState;
 }
 
 @freezed

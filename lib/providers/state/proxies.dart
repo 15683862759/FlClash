@@ -79,22 +79,6 @@ ProxyState proxyState(Ref ref) {
   );
 }
 
-@riverpod
-ProxiesActionsState proxiesActionsState(Ref ref) {
-  final pageLabel = ref.watch(currentPageLabelProvider);
-  final hasProviders = ref.watch(
-    providersProvider.select((state) => state.isNotEmpty),
-  );
-  final type = ref.watch(
-    proxiesStyleSettingProvider.select((state) => state.type),
-  );
-  return ProxiesActionsState(
-    pageLabel: pageLabel,
-    hasProviders: hasProviders,
-    type: type,
-  );
-}
-
 /// Watching the delay map instead would drop nodes one probe at a time, and
 /// reading it on any other rebuild would drop them whenever something
 /// unrelated changed mid-test.
@@ -210,39 +194,6 @@ ProxiesTabControllerState proxiesTabControllerState(Ref ref) {
 }
 
 @riverpod
-ProxyGroupSelectorState proxyGroupSelectorState(
-  Ref ref,
-  String groupName,
-  String query,
-) {
-  final sortType = ref.watch(
-    proxiesStyleSettingProvider.select((state) => state.sortType),
-  );
-  final cardType = ref.watch(
-    proxiesStyleSettingProvider.select((state) => state.cardType),
-  );
-  final group = ref.watch(
-    visibleGroupsStateProvider.select(
-      (state) => state.value.getGroup(groupName),
-    ),
-  );
-  final sortNum = ref.watch(sortNumProvider);
-  final proxies =
-      group?.all
-          .whereMatches(SearchQuery(query), (proxy) => proxy.searchFields)
-          .toList() ??
-      [];
-  return ProxyGroupSelectorState(
-    testUrl: group?.testUrl,
-    proxiesSortType: sortType,
-    proxyCardType: cardType,
-    sortNum: sortNum,
-    groupType: group?.type ?? GroupType.Selector,
-    proxies: proxies,
-  );
-}
-
-@riverpod
 String realTestUrl(Ref ref, [String? testUrl]) {
   final currentTestUrl = ref.watch(
     appSettingProvider.select((state) => state.testUrl),
@@ -261,19 +212,6 @@ int? delay(Ref ref, {required String proxyName, String? testUrl}) {
       (state) => state[effectiveTestUrl]?[effectiveProxyName],
     ),
   );
-}
-
-@riverpod
-DelayTestPhase? delayTestPhase(
-  Ref ref, {
-  required String proxyName,
-  String? testUrl,
-}) {
-  final currentTestUrl = ref.watch(realTestUrlProvider(testUrl));
-  final proxyState = ref.watch(realSelectedProxyStateProvider(proxyName));
-  final effectiveTestUrl = proxyState.testUrl.takeFirstValid([currentTestUrl]);
-  final key = delayTestKey(effectiveTestUrl, proxyState.proxyName);
-  return ref.watch(pendingDelayTestsProvider.select((state) => state[key]));
 }
 
 final delayViewProvider = Provider.autoDispose

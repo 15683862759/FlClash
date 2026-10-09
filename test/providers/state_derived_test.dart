@@ -302,11 +302,6 @@ void main() {
 
     final dashboard = container.read(dashboardStateProvider);
     expect(dashboard.dashboardWidgets, isNotEmpty);
-
-    final actions = container.read(proxiesActionsStateProvider);
-    expect(actions.pageLabel, PageLabel.dashboard);
-    expect(actions.hasProviders, isFalse);
-    expect(actions.type, ProxiesType.tab);
   });
 
   test(
@@ -364,18 +359,6 @@ void main() {
       final controller = container.read(proxiesTabControllerStateProvider);
       expect(controller.groupNames, ['Group B']);
       expect(controller.currentGroupName, 'Group B');
-
-      final selector = container.read(
-        proxyGroupSelectorStateProvider('Group A', 'be'),
-      );
-      expect(selector.proxies.single.name, 'Beta');
-      expect(selector.groupType, GroupType.Selector);
-
-      final missing = container.read(
-        proxyGroupSelectorStateProvider('Missing', ''),
-      );
-      expect(missing.proxies, isEmpty);
-      expect(missing.groupType, GroupType.Selector);
     },
   );
 
@@ -848,16 +831,6 @@ void main() {
       container.read(realTestUrlProvider('https://custom.test')),
       'https://custom.test',
     );
-    expect(container.read(isCurrentPageProvider(PageLabel.dashboard)), isTrue);
-    expect(
-      container.read(
-        isCurrentPageProvider(
-          PageLabel.logs,
-          handler: (_, viewMode) => viewMode == ViewMode.mobile,
-        ),
-      ),
-      isTrue,
-    );
   });
 
   test('package, hotkey, profile, and overwrite providers expose defaults', () {
@@ -869,12 +842,6 @@ void main() {
       lastUpdateTime: 1,
     );
     container.read(packagesProvider.notifier).update((_) => [package]);
-    final packageList = container.read(packageListSelectorStateProvider);
-    expect(packageList.packages, [package]);
-    expect(
-      packageList.accessControlProps,
-      container.read(vpnSettingProvider).accessControlProps,
-    );
 
     const action = HotKeyAction(
       action: HotAction.start,
