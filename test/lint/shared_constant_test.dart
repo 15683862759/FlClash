@@ -131,6 +131,25 @@ void main() {
       reason: 'the app installs the service the helper registers',
     );
   });
+
+  test('every message the core sends decodes into an app event', () {
+    final app = File('lib/enum/enum.dart').readAsStringSync();
+    final core = File('core/constant.go').readAsStringSync();
+    final events = _enumValues(app, 'CoreEventType', r'^  (\w+),');
+    final messages = _quotedValues(
+      core,
+      r'^\s*\w+Message\s+MessageType\s*=\s*"([^"]+)"',
+    );
+
+    expect(events, isNotEmpty);
+    expect(messages, isNotEmpty);
+    expect(
+      messages.difference(events),
+      isEmpty,
+      reason:
+          'a message the core sends must be a CoreEventType the app decodes',
+    );
+  });
 }
 
 String _rustConst(String source, String name) {
