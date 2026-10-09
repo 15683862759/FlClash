@@ -591,26 +591,3 @@ Widget generateSectionV3({
     ],
   );
 }
-
-List<Widget> generateInfoSection({
-  required Info info,
-  required Iterable<Widget> items,
-  List<Widget>? actions,
-  bool separated = true,
-}) {
-  final genItems = separated
-      ? items.separated(const Divider(height: 0))
-      : items;
-  return [
-    if (items.isNotEmpty) InfoHeader(info: info, actions: actions),
-    ...genItems,
-  ];
-}
-
-Widget generateListView(List<Widget> items, {double topPadding = 0}) {
-  return ListView.builder(
-    itemCount: items.length,
-    itemBuilder: (_, index) => items[index],
-    padding: EdgeInsets.only(top: topPadding, bottom: 16),
-  );
-}

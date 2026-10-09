@@ -33,14 +33,6 @@ Future<String> _encodeYaml<T>(T content) async {
   return yaml.encode(content);
 }
 
-Future<String> encodeMD5Task(String data) async {
-  return compute<String, String>(_encodeMD5, data);
-}
-
-Future<String> _encodeMD5<T>(String content) async {
-  return content.toMd5();
-}
-
 /// Throws [FormatException] when the file is not UTF-8.
 Future<String?> readTextFileTask(String path) {
   return compute(_readTextFile, path);

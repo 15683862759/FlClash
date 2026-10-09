@@ -20,7 +20,6 @@ void main() {
     expect(decoded['name'], 'FlClash');
     expect(decoded['values'], [1, true, null]);
     expect(await encodeYamlTask({'enabled': true}), contains('enabled: true'));
-    expect(await encodeMD5Task('abc'), '900150983cd24fb0d6963f7d28e17f72');
   });
 
   test('toGroupsTask converts, selects, and sorts core proxy data', () async {
