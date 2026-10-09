@@ -64,6 +64,9 @@ var (
 
 	serviceClaimsMu sync.Mutex
 	serviceClaims   = map[string]*context.CancelFunc{}
+
+	// serviceProbe is a variable so tests can answer a rule without a network.
+	serviceProbe = runProbe
 )
 
 type serviceEnv struct {
@@ -88,7 +91,7 @@ func (e serviceEnv) send(req probeRequest) *ProbeResult {
 		headers[name] = value
 	}
 	req.headers = headers
-	return runProbe(e.ctx, req)
+	return serviceProbe(e.ctx, req)
 }
 
 type serviceChecker struct {

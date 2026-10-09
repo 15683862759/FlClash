@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestNormalizeRegion(t *testing.T) {
@@ -137,5 +139,136 @@ func TestDisneyAndPrimePatterns(t *testing.T) {
 	}
 	if got := firstSubmatch(primeRegionPattern, `{"currentTerritory":"NL"}`); got != "NL" {
 		t.Errorf("territory = %q", got)
+	}
+}
+
+func withServiceProbe(t *testing.T, answers map[string]*ProbeResult) {
+	t.Helper()
+	previous := serviceProbe
+	serviceProbe = func(_ context.Context, req probeRequest) *ProbeResult {
+		if result, ok := answers[req.url]; ok {
+			return result
+		}
+		return &ProbeResult{Error: probeErrorFailed}
+	}
+	t.Cleanup(func() { serviceProbe = previous })
+}
+
+func runServiceRule(
+	t *testing.T,
+	answers map[string]*ProbeResult,
+	check func(serviceEnv) ServiceCheckItem,
+) ServiceCheckItem {
+	t.Helper()
+	withServiceProbe(t, answers)
+	return check(serviceEnv{ctx: context.Background(), timeout: time.Second})
+}
+
+func TestCheckReachableMapsTheStatusCode(t *testing.T) {
+	withServiceProbe(t, map[string]*ProbeResult{
+		"probe://ok":    {StatusCode: http.StatusNoContent, Delay: 12},
+		"probe://later": {StatusCode: http.StatusNotFound},
+		"probe://block": {StatusCode: http.StatusForbidden},
+		"probe://empty": {},
+	})
+	env := serviceEnv{ctx: context.Background()}
+
+	for url, want := range map[string]string{
+		"probe://ok":    serviceAvailable,
+		"probe://later": serviceUnavailable,
+		"probe://block": serviceRestricted,
+		"probe://empty": serviceUnavailable,
+	} {
+		if got := checkReachable(url)(env); got.Status != want {
+			t.Errorf("checkReachable(%q) = %q, want %q", url, got.Status, want)
+		}
+	}
+}
+
+func TestCheckClaudeFollowsTheLocation(t *testing.T) {
+	const url = "https://claude.ai/cdn-cgi/trace"
+
+	allowed := runServiceRule(t, map[string]*ProbeResult{
+		url: {StatusCode: http.StatusOK, Body: "loc=DE\n", Delay: 30},
+	}, checkClaude)
+	if allowed.Status != serviceAvailable || allowed.Region != "DE" {
+		t.Errorf("loc=DE gave %+v, want available in DE", allowed)
+	}
+
+	blocked := runServiceRule(t, map[string]*ProbeResult{
+		url: {StatusCode: http.StatusOK, Body: "loc=CN\n"},
+	}, checkClaude)
+	if blocked.Status != serviceUnsupportedRegion || blocked.Region != "CN" {
+		t.Errorf("loc=CN gave %+v, want an unsupported region", blocked)
+	}
+
+	for _, body := range []string{"loc=1A\n", "loc=\n"} {
+		unreadable := runServiceRule(t, map[string]*ProbeResult{
+			url: {StatusCode: http.StatusOK, Body: body},
+		}, checkClaude)
+		if unreadable.Status != serviceFailed {
+			t.Errorf("%q gave %q, want %q", body, unreadable.Status, serviceFailed)
+		}
+	}
+
+	timedOut := runServiceRule(t, map[string]*ProbeResult{
+		url: {Error: probeErrorTimeout, Delay: 900},
+	}, checkClaude)
+	if timedOut.Status != serviceTimeout || timedOut.Delay != 0 {
+		t.Errorf("a timeout gave %+v, want no delay kept", timedOut)
+	}
+}
+
+func TestCheckGeminiReadsTheRegionCode(t *testing.T) {
+	const url = "https://gemini.google.com"
+	page := func(code string) *ProbeResult {
+		return &ProbeResult{StatusCode: http.StatusOK, Body: `{"x":1}` + geminiRegionMarker + code + `"}`}
+	}
+
+	allowed := runServiceRule(t, map[string]*ProbeResult{url: page("DEU")}, checkGemini)
+	if allowed.Status != serviceAvailable || allowed.Region != "DE" {
+		t.Errorf("DEU gave %+v, want available in DE", allowed)
+	}
+
+	blocked := runServiceRule(t, map[string]*ProbeResult{url: page("CHN")}, checkGemini)
+	if blocked.Status != serviceUnsupportedRegion {
+		t.Errorf("CHN gave %q, want %q", blocked.Status, serviceUnsupportedRegion)
+	}
+
+	lowercase := runServiceRule(t, map[string]*ProbeResult{url: page("deu")}, checkGemini)
+	if lowercase.Status != serviceFailed {
+		t.Errorf("a lowercase code gave %q, want %q", lowercase.Status, serviceFailed)
+	}
+
+	missing := runServiceRule(t, map[string]*ProbeResult{
+		url: {StatusCode: http.StatusOK, Body: `<html></html>`},
+	}, checkGemini)
+	if missing.Status != serviceFailed {
+		t.Errorf("a page without the marker gave %q, want %q", missing.Status, serviceFailed)
+	}
+}
+
+func TestCheckYouTubePremiumStatuses(t *testing.T) {
+	const url = "https://www.youtube.com/premium?hl=en"
+
+	allowed := runServiceRule(t, map[string]*ProbeResult{
+		url: {StatusCode: http.StatusOK, Body: `{"GL":"JP"} <span>ad-free</span>`},
+	}, checkYouTubePremium)
+	if allowed.Status != serviceAvailable || allowed.Region != "JP" {
+		t.Errorf("an ad-free page gave %+v, want available in JP", allowed)
+	}
+
+	blocked := runServiceRule(t, map[string]*ProbeResult{
+		url: {StatusCode: http.StatusOK, Body: `{"GL":"JP"} YouTube Premium is not available in your country`},
+	}, checkYouTubePremium)
+	if blocked.Status != serviceUnsupportedRegion {
+		t.Errorf("the refusal page gave %q, want %q", blocked.Status, serviceUnsupportedRegion)
+	}
+
+	broken := runServiceRule(t, map[string]*ProbeResult{
+		url: {StatusCode: http.StatusInternalServerError},
+	}, checkYouTubePremium)
+	if broken.Status != serviceUnavailable {
+		t.Errorf("a 500 gave %q, want %q", broken.Status, serviceUnavailable)
 	}
 }
