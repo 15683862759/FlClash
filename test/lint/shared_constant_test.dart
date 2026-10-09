@@ -65,6 +65,24 @@ void main() {
       reason: 'a ServiceProbeStatus id must be a status the core reports',
     );
   });
+
+  test('the app and the core agree on the method names', () {
+    final app = File('lib/core/method.dart').readAsStringSync();
+    final core = File('core/constant.go').readAsStringSync();
+    final methods = _enumValues(app, 'CoreMethod', r'^  (\w+),');
+    final dispatched = _quotedValues(
+      core,
+      r'^\s*\w+Method\s+CoreMethod\s*=\s*"([^"]+)"',
+    );
+
+    expect(methods, isNotEmpty);
+    expect(dispatched, isNotEmpty);
+    expect(
+      methods,
+      dispatched,
+      reason: 'a CoreMethod name must be one the core answers',
+    );
+  });
 }
 
 Set<String> _enumValues(String source, String name, String pattern) {
@@ -72,16 +90,16 @@ Set<String> _enumValues(String source, String name, String pattern) {
   if (start < 0) {
     fail('could not find enum $name in the app sources');
   }
-  final body = source.substring(start, source.indexOf(';', start));
-  return RegExp(
-    pattern,
-    multiLine: true,
-  ).allMatches(body).map((match) => match.group(1)!).toSet();
+  final semi = source.indexOf(';', start);
+  final close = source.indexOf('}', start);
+  final end = semi > start && semi < close ? semi : close;
+  return _quotedValues(source.substring(start, end), pattern);
 }
 
 Set<String> _quotedValues(String source, String pattern) {
   return RegExp(
     pattern,
+    multiLine: true,
   ).allMatches(source).map((match) => match.group(1)!).toSet();
 }
 
