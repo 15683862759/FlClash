@@ -311,11 +311,22 @@ class WindowCaptionController extends ValueNotifier<WindowCaptionState>
   bool _disposed = false;
 
   Future<void> _syncFromWindow() async {
-    final states = await Future.wait<bool>([
-      desktopWindow.isAlwaysOnTop(),
-      desktopWindow.isMaximized(),
-      desktopWindow.isFullScreen(),
-    ]);
+    final List<bool> states;
+    try {
+      states = await Future.wait<bool>([
+        desktopWindow.isAlwaysOnTop(),
+        desktopWindow.isMaximized(),
+        desktopWindow.isFullScreen(),
+      ]);
+    } catch (error) {
+      // A window manager that refuses one of the queries leaves the caption at
+      // its events-only state instead of throwing out of an unawaited future.
+      commonPrint.log(
+        'Window caption sync failed: ${compactError(error)}',
+        logLevel: LogLevel.warning,
+      );
+      return;
+    }
     _set(
       WindowCaptionState(
         isPinned: states[0],
