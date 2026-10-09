@@ -106,17 +106,6 @@ abstract class RouteSnapshot with _$RouteSnapshot {
 }
 
 @freezed
-abstract class UpdateGeoDataParams with _$UpdateGeoDataParams {
-  const factory UpdateGeoDataParams({
-    @JsonKey(name: 'geo-type') required String geoType,
-    @JsonKey(name: 'geo-name') required String geoName,
-  }) = _UpdateGeoDataParams;
-
-  factory UpdateGeoDataParams.fromJson(Map<String, Object?> json) =>
-      _$UpdateGeoDataParamsFromJson(json);
-}
-
-@freezed
 abstract class CoreEvent with _$CoreEvent {
   const factory CoreEvent({required CoreEventType type, dynamic data}) =
       _CoreEvent;

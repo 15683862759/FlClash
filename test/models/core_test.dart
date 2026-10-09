@@ -73,15 +73,6 @@ void main() {
     });
   });
 
-  group('UpdateGeoDataParams', () {
-    test('fromJson with snake-case keys', () {
-      final json = {'geo-type': 'mmdb', 'geo-name': 'Country'};
-      final params = UpdateGeoDataParams.fromJson(json);
-      expect(params.geoType, 'mmdb');
-      expect(params.geoName, 'Country');
-    });
-  });
-
   group('Delay', () {
     test('fromJson and toJson', () {
       final json = {'name': 'P1', 'url': 'test.com', 'value': 42};

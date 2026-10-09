@@ -177,19 +177,6 @@ Map<String, dynamic> _$RouteSnapshotToJson(_RouteSnapshot instance) =>
       'picks': instance.picks,
     };
 
-_UpdateGeoDataParams _$UpdateGeoDataParamsFromJson(Map<String, dynamic> json) =>
-    _UpdateGeoDataParams(
-      geoType: json['geo-type'] as String,
-      geoName: json['geo-name'] as String,
-    );
-
-Map<String, dynamic> _$UpdateGeoDataParamsToJson(
-  _UpdateGeoDataParams instance,
-) => <String, dynamic>{
-  'geo-type': instance.geoType,
-  'geo-name': instance.geoName,
-};
-
 _CoreEvent _$CoreEventFromJson(Map<String, dynamic> json) => _CoreEvent(
   type: $enumDecode(_$CoreEventTypeEnumMap, json['type']),
   data: json['data'],
