@@ -83,6 +83,33 @@ void main() {
       reason: 'a CoreMethod name must be one the core answers',
     );
   });
+
+  test('the app and the core agree on the service sweep budget', () {
+    final app = File('lib/common/constant.dart').readAsStringSync();
+    final core = File('core/service_check.go').readAsStringSync();
+
+    expect(
+      _dartIntConst(app, 'serviceSweepBudgetFactor'),
+      _goIntConst(core, 'serviceSweepBudgetFactor'),
+      reason: 'the guard the app waits with must cover the sweep the core runs',
+    );
+  });
+}
+
+int _dartIntConst(String source, String name) {
+  final match = RegExp('const $name\\s*=\\s*(\\d+)').firstMatch(source);
+  if (match == null) {
+    fail('could not read $name from the Dart constants');
+  }
+  return int.parse(match.group(1)!);
+}
+
+int _goIntConst(String source, String name) {
+  final match = RegExp('$name\\s*=\\s*(\\d+)').firstMatch(source);
+  if (match == null) {
+    fail('could not read $name from the core sources');
+  }
+  return int.parse(match.group(1)!);
 }
 
 Set<String> _enumValues(String source, String name, String pattern) {
