@@ -207,6 +207,32 @@ void main() {
       expect(_labels(_complete(document)), ['REJECT', 'REJECT-DROP']);
     });
 
+    test('completes the member the caret sits in after a quoted one', () {
+      const document =
+          'proxies:\n  - name: node-a\n    type: vmess\n'
+          'proxy-groups:\n  - name: G\n    type: select\n'
+          '    proxies: ["HK, TW", no|';
+      expect(_labels(_complete(document)), contains('node-a'));
+    });
+
+    test('completes inside a quoted flow member', () {
+      const document =
+          'proxies:\n  - name: node-a\n    type: vmess\n'
+          'proxy-groups:\n  - name: G\n    type: select\n'
+          '    proxies: ["no|"]';
+      expect(_labels(_complete(document)), contains('node-a'));
+    });
+
+    test('keeps the whole quoted member when it holds a comma', () {
+      const document =
+          'proxies:\n  - name: "HK, TW"\n    type: vmess\n'
+          'proxy-groups:\n  - name: G\n    type: select\n'
+          '    proxies: ["HK, T|W"]';
+      final completion = _complete(document);
+      expect(_labels(completion), contains('HK, TW'));
+      expect(completion!.prefix, 'HK, T');
+    });
+
     test('completes against the part of the config being edited', () {
       expect(
         _labels(

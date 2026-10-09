@@ -152,8 +152,7 @@ class ClashCompletionSource {
       if (schema.kind != YamlKind.list || entry == null) {
         return null;
       }
-      text = text.substring(text.lastIndexOf(RegExp(r'[\[,]')) + 1).trimLeft();
-      return _scalar(request, entry, text);
+      return _scalar(request, entry, _flowEntryText(text));
     }
     if (schema.kind != YamlKind.scalar) {
       return null;
@@ -293,6 +292,32 @@ class ClashCompletionSource {
 
 Iterable<CodeForgeSuggestion> _plain(Iterable<String> labels) =>
     labels.map((label) => CodeForgeSuggestion(label: label));
+
+/// The flow member the caret sits in, which is what a suggestion replaces.
+String _flowEntryText(String text) {
+  var start = 0;
+  var quote = '';
+  for (var index = 0; index < text.length; index++) {
+    final char = text[index];
+    if (quote.isNotEmpty) {
+      if (char == quote) {
+        quote = '';
+      }
+      continue;
+    }
+    if (char == "'" || char == '"') {
+      quote = char;
+      continue;
+    }
+    if (char == '[' || char == ',') {
+      start = index + 1;
+    }
+  }
+  final entry = text.substring(start).trimLeft();
+  return entry.startsWith('"') || entry.startsWith("'")
+      ? entry.substring(1)
+      : entry;
+}
 
 String _escapeSnippet(String text) =>
     text.replaceAllMapped(RegExp(r'[$}\\]'), (match) => '\\${match[0]}');
