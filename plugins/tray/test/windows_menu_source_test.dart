@@ -14,11 +14,15 @@ File _resolveSource(String relativePath) {
   return direct;
 }
 
+// A Windows checkout keeps this source with CRLF, so compare on one ending.
+String _readSource(String relativePath) =>
+    _resolveSource(relativePath).readAsStringSync().replaceAll('\r\n', '\n');
+
 void main() {
   late String pluginSource;
 
   setUpAll(() {
-    pluginSource = _resolveSource('windows/tray_plugin.cpp').readAsStringSync();
+    pluginSource = _readSource('windows/tray_plugin.cpp');
   });
 
   test('windows menu clicks come from TrackPopupMenu, not WM_COMMAND', () {
