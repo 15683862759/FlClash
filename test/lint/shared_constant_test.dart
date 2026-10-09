@@ -288,6 +288,12 @@ void main() {
             'lib/models/core.dart',
             'ProbeResult',
           ),
+          (
+            'core/constant.go',
+            'ProxiesData',
+            'lib/models/core.dart',
+            'ProxiesData',
+          ),
           ('core/constant.go', 'Delay', 'lib/models/core.dart', 'Delay'),
           (
             'core/constant.go',
@@ -355,6 +361,67 @@ void main() {
       );
     }
   });
+
+  test('the app and the core agree on the maps it builds by hand', () {
+    final app = File('lib/core/interface.dart').readAsStringSync();
+    final core = File('core/constant.go').readAsStringSync();
+    // These payloads have no model on the app side: it builds the request map
+    // and reads the response keys by hand, so nothing else compares them.
+    final cases =
+        <(String what, Set<String> keys, String goStruct, bool exact)>[
+          (
+            'the delay test request',
+            _dartMapLiteralKeys(app, 'delayParams'),
+            'TestDelayParams',
+            true,
+          ),
+          (
+            'the proxy query',
+            _dartKeyedValues(_callSection(app, 'getProxies')),
+            'ProxiesQuery',
+            true,
+          ),
+          (
+            'the side loaded provider',
+            _dartKeyedValues(_callSection(app, 'sideLoadExternalProvider')),
+            'SideLoadParams',
+            true,
+          ),
+          (
+            'the proxy snapshot',
+            _dartBracketKeys(_callSection(app, 'getProxies')),
+            'ProxiesData',
+            false,
+          ),
+          (
+            'the traffic stats',
+            _dartBracketKeys(_callSection(app, 'getTrafficStats')),
+            'TrafficStats',
+            false,
+          ),
+        ];
+    for (final (what, keys, goStruct, exact) in cases) {
+      final sent = _goJsonTags(core, goStruct);
+      expect(keys, isNotEmpty, reason: '$what must send or read something');
+      expect(
+        keys.difference(sent),
+        isEmpty,
+        reason:
+            '$what names ${keys.difference(sent).join(', ')}, which $goStruct does not carry',
+      );
+      if (!exact) {
+        // A response key the app leaves to a model is pinned by the payload
+        // check instead of here.
+        continue;
+      }
+      expect(
+        sent.difference(keys),
+        isEmpty,
+        reason:
+            '$goStruct carries ${sent.difference(keys).join(', ')}, which $what never names',
+      );
+    }
+  });
 }
 
 String _kebab(String name) => name
@@ -363,6 +430,36 @@ String _kebab(String name) => name
       (match) => '-${match.group(0)!.toLowerCase()}',
     )
     .replaceFirst(RegExp('^-'), '');
+
+/// The keys of a `final <name> = { ... };` map the app builds for one call.
+Set<String> _dartMapLiteralKeys(String source, String name) {
+  final start = source.indexOf('final $name = {');
+  if (start < 0) {
+    fail('could not find the $name map in the app sources');
+  }
+  final end = source.indexOf('};', start);
+  if (end < 0) {
+    fail('could not find the end of the $name map');
+  }
+  return _dartKeyedValues(source.substring(start, end));
+}
+
+/// The keys of the map literals inside one `CoreMethod` call.
+Set<String> _dartKeyedValues(String call) => _quotedValues(call, r"'([^']+)':");
+
+/// The keys the app reads off the payload of one `CoreMethod` call.
+Set<String> _dartBracketKeys(String call) =>
+    _quotedValues(call, r"data\['([^']+)'\]");
+
+/// The text of one call, from its method name up to the next call.
+String _callSection(String source, String method) {
+  final start = source.indexOf('method: CoreMethod.$method');
+  if (start < 0) {
+    fail('could not find the $method call in the app sources');
+  }
+  final next = source.indexOf('method: CoreMethod.', start + 1);
+  return source.substring(start, next < 0 ? source.length : next);
+}
 
 /// The methods the app calls, with the shape of the argument it sends: an
 /// object (a `toJson()` map or a collection held in a local) or a scalar.
