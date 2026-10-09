@@ -72,14 +72,12 @@ Duration? nextProfileAutoUpdateDelay(Iterable<Profile> profiles, DateTime now) {
       continue;
     }
     final lastUpdateDate = profile.lastUpdateDate;
-    if (lastUpdateDate == null) {
+    if (lastUpdateDate == null || profile.isAutoUpdateDue(now)) {
       return Duration.zero;
     }
-    final dueAt = lastUpdateDate.add(profile.autoUpdateDuration);
-    if (!dueAt.isAfter(now)) {
-      return Duration.zero;
-    }
-    final delay = dueAt.difference(now);
+    final delay = lastUpdateDate
+        .add(profile.autoUpdateDuration)
+        .difference(now);
     if (next == null || delay < next) {
       next = delay;
     }

@@ -144,6 +144,13 @@ extension ProfileExtension on Profile {
   bool get realAutoUpdate =>
       url.isNotEmpty && autoUpdate && autoUpdateDuration > Duration.zero;
 
+  /// Whether the subscription is due, counting one that never updated.
+  bool isAutoUpdateDue(DateTime now) {
+    final lastUpdateDate = this.lastUpdateDate;
+    return lastUpdateDate == null ||
+        !lastUpdateDate.add(autoUpdateDuration).isAfter(now);
+  }
+
   String get realLabel => label.takeFirstValid([id.toString()]);
 
   String get fileName => '$id.yaml';

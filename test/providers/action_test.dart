@@ -19,8 +19,59 @@ import '../helpers/test_profiles.dart';
 
 class _MockCoreHandlerInterface extends Mock implements CoreHandlerInterface {}
 
+class _RecordingProfilesAction extends ProfilesAction {
+  final updated = <int>[];
+
+  @override
+  Future<void> updateProfile(
+    Profile profile, {
+    bool showLoading = false,
+    Iterable<int> renameIn = const [],
+  }) async {
+    updated.add(profile.id);
+  }
+}
+
 void main() {
   group('ProfilesAction', () {
+    test('auto update sweeps only the subscriptions that are due', () async {
+      final now = DateTime.now();
+      final due = Profile(
+        id: 1,
+        url: 'https://example.com/a',
+        autoUpdateDuration: const Duration(hours: 1),
+        lastUpdateDate: now.subtract(const Duration(hours: 2)),
+      );
+      final later = Profile(
+        id: 2,
+        url: 'https://example.com/b',
+        autoUpdateDuration: const Duration(hours: 6),
+        lastUpdateDate: now,
+      );
+      final noInterval = Profile(
+        id: 3,
+        url: 'https://example.com/c',
+        autoUpdateDuration: Duration.zero,
+        lastUpdateDate: now.subtract(const Duration(hours: 2)),
+      );
+      final action = _RecordingProfilesAction();
+      final container = ProviderContainer(
+        overrides: [
+          profilesProvider.overrideWith(
+            () => TestProfiles([due, later, noInterval]),
+          ),
+          profilesActionProvider.overrideWith(() => action),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(profilesActionProvider.notifier)
+          .autoUpdateProfiles();
+
+      expect(action.updated, [due.id]);
+    });
+
     test('keeps edited profile data when remote update fails', () async {
       final original = Profile.normal(label: 'old label', url: 'bad-url');
       final edited = original.copyWith(

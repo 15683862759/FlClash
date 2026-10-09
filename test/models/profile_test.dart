@@ -70,6 +70,30 @@ void main() {
       expect(none.realAutoUpdate, false);
       expect(backwards.realAutoUpdate, false);
     });
+
+    test('is due once the interval has passed or never ran', () {
+      final now = DateTime.utc(2026, 10, 7, 12);
+      final ran = Profile(
+        id: 11,
+        url: 'https://example.com/profile.yaml',
+        autoUpdateDuration: const Duration(hours: 6),
+        lastUpdateDate: now.subtract(const Duration(hours: 6)),
+      );
+      const never = Profile(
+        id: 12,
+        url: 'https://example.com/profile.yaml',
+        autoUpdateDuration: Duration(hours: 6),
+      );
+
+      expect(ran.isAutoUpdateDue(now), true);
+      expect(
+        ran
+            .copyWith(lastUpdateDate: now.subtract(const Duration(hours: 5)))
+            .isAutoUpdateDue(now),
+        false,
+      );
+      expect(never.isAutoUpdateDue(now), true);
+    });
   });
 
   group('ProfilesExt', () {

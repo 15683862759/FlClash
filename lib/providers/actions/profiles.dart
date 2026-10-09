@@ -54,12 +54,9 @@ class ProfilesAction extends _$ProfilesAction {
   }
 
   Future<void> _runAutoUpdateProfiles() async {
+    final now = DateTime.now();
     for (final profile in ref.read(profilesProvider)) {
-      if (!profile.autoUpdate) continue;
-      final isNotNeedUpdate = profile.lastUpdateDate
-          ?.add(profile.autoUpdateDuration)
-          .isBeforeNow;
-      if (isNotNeedUpdate == false || profile.type == ProfileType.file) {
+      if (!profile.realAutoUpdate || !profile.isAutoUpdateDue(now)) {
         continue;
       }
       try {
