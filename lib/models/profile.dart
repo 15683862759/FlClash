@@ -5,8 +5,6 @@ import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'clash_config.dart';
-
 part 'generated/profile.freezed.dart';
 part 'generated/profile.g.dart';
 
@@ -93,25 +91,6 @@ extension ProfileRuleLinkExt on ProfileRuleLink {
     ];
     return splits.where((item) => item != null).join('_');
   }
-}
-
-@freezed
-abstract class StandardOverwrite with _$StandardOverwrite {
-  const factory StandardOverwrite({
-    @Default([]) List<Rule> addedRules,
-    @Default([]) List<int> disabledRuleIds,
-  }) = _StandardOverwrite;
-
-  factory StandardOverwrite.fromJson(Map<String, Object?> json) =>
-      _$StandardOverwriteFromJson(json);
-}
-
-@freezed
-abstract class ScriptOverwrite with _$ScriptOverwrite {
-  const factory ScriptOverwrite({int? scriptId}) = _ScriptOverwrite;
-
-  factory ScriptOverwrite.fromJson(Map<String, Object?> json) =>
-      _$ScriptOverwriteFromJson(json);
 }
 
 extension ProfilesExt on List<Profile> {

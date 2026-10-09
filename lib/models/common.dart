@@ -450,17 +450,6 @@ extension FileInfoFileExt on File {
 }
 
 @freezed
-abstract class VersionInfo with _$VersionInfo {
-  const factory VersionInfo({
-    @Default('') String clashName,
-    @Default('') String version,
-  }) = _VersionInfo;
-
-  factory VersionInfo.fromJson(Map<String, Object?> json) =>
-      _$VersionInfoFromJson(json);
-}
-
-@freezed
 abstract class Traffic with _$Traffic {
   const factory Traffic({@Default(0) num up, @Default(0) num down}) = _Traffic;
 
@@ -520,44 +509,6 @@ extension GroupExt on Group {
       return realNow.isNotEmpty ? realNow : proxyName;
     }
     return proxyName.isNotEmpty ? proxyName : realNow;
-  }
-}
-
-@freezed
-abstract class ColorSchemes with _$ColorSchemes {
-  const factory ColorSchemes({
-    ColorScheme? lightColorScheme,
-    ColorScheme? darkColorScheme,
-  }) = _ColorSchemes;
-}
-
-extension ColorSchemesExt on ColorSchemes {
-  ColorScheme getColorSchemeForBrightness(
-    Brightness brightness,
-    DynamicSchemeVariant schemeVariant,
-  ) {
-    if (brightness == Brightness.dark) {
-      return darkColorScheme != null
-          ? ColorScheme.fromSeed(
-              seedColor: darkColorScheme!.primary,
-              brightness: Brightness.dark,
-              dynamicSchemeVariant: schemeVariant,
-            )
-          : ColorScheme.fromSeed(
-              seedColor: const Color(defaultPrimaryColor),
-              brightness: Brightness.dark,
-              dynamicSchemeVariant: schemeVariant,
-            );
-    }
-    return lightColorScheme != null
-        ? ColorScheme.fromSeed(
-            seedColor: lightColorScheme!.primary,
-            dynamicSchemeVariant: schemeVariant,
-          )
-        : ColorScheme.fromSeed(
-            seedColor: const Color(defaultPrimaryColor),
-            dynamicSchemeVariant: schemeVariant,
-          );
   }
 }
 

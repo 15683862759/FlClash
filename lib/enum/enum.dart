@@ -256,8 +256,6 @@ enum CoreEventType {
   routeChanged,
 }
 
-enum InvokeMessageType { protect, process }
-
 enum FindProcessMode { always, off }
 
 enum InterfaceNameMode { clear, follow, custom }

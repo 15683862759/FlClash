@@ -18,19 +18,6 @@ abstract class SelectValue<T> with _$SelectValue<T> {
 }
 
 @freezed
-abstract class ActivateState with _$ActivateState {
-  const factory ActivateState({required bool active}) = _ActivateState;
-}
-
-@freezed
-abstract class InitState with _$InitState {
-  const factory InitState({
-    required Config config,
-    required List<Profile> profiles,
-  }) = _InitState;
-}
-
-@freezed
 abstract class CommonMessage with _$CommonMessage {
   const factory CommonMessage({
     required String id,
@@ -71,14 +58,6 @@ abstract class AppBarEditState with _$AppBarEditState {
     @Default(0) int editCount,
     required Function() onExit,
   }) = _AppBarEditState;
-}
-
-@freezed
-abstract class StartButtonState with _$StartButtonState {
-  const factory StartButtonState({
-    required bool isPreload,
-    required bool hasProfile,
-  }) = _StartButtonState;
 }
 
 @freezed
