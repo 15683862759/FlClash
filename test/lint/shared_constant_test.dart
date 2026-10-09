@@ -150,6 +150,33 @@ void main() {
           'a message the core sends must be a CoreEventType the app decodes',
     );
   });
+
+  test('the app and the core agree on the geo resources', () {
+    final app = File('lib/enum/enum.dart').readAsStringSync();
+    final core = File('core/hub.go').readAsStringSync();
+    // The body slice ends at the enum's `;`, so the last member arrives
+    // without its separator and needs the end-of-input alternative.
+    final names = _enumValues(app, 'GeoResource', r'^  (\w+)(?:[,;]|$)');
+    final values = _enumValues(app, 'GeoResource', r"@JsonValue\('([^']+)'\)");
+    final keys = _quotedValues(core, r'^\t"(\w+)":\s+\{update:');
+    final lowerKeys = {for (final key in keys) key.toLowerCase()};
+
+    expect(names, isNotEmpty);
+    expect(values, isNotEmpty);
+    expect(keys, isNotEmpty);
+    expect(
+      names,
+      keys,
+      reason:
+          'the app updates a resource by name, which the core looks up as is',
+    );
+    expect(
+      values,
+      lowerKeys,
+      reason:
+          'the core reports the name back and the app decodes it lower cased',
+    );
+  });
 }
 
 String _rustConst(String source, String name) {
