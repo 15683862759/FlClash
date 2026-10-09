@@ -300,6 +300,22 @@ USB 10/100/1000 LAN
       },
     );
 
+    test('filters the banner in whatever language macOS writes it', () {
+      // The banner is a message from `networksetup`, so it follows the system
+      // language; matching its wording left it in the list as a service name on
+      // every other locale, and its failure aborted the whole run.
+      for (final banner in [
+        'An asterisk (*) denotes that a network service is disabled.',
+        '星号 (*) 表示网络服务已停用。',
+        'Ein Sternchen (*) kennzeichnet einen deaktivierten Netzwerkdienst.',
+      ]) {
+        final services = MacosProxyCommands.parseNetworkServices(
+          '$banner\nWi-Fi\n',
+        );
+        expect(services, ['Wi-Fi'], reason: banner);
+      }
+    });
+
     test('passes bypass domains as separate networksetup arguments', () {
       final command = MacosProxyCommands.buildProxyBypass('Wi-Fi', [
         'localhost',

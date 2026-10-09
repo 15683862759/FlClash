@@ -124,7 +124,11 @@ class MacosProxyCommands {
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
         .where((line) => !line.startsWith('*'))
-        .where((line) => !line.startsWith('An asterisk '))
+        // The banner that explains the asterisk marker is written in the
+        // system language, so it is recognized by the marker it explains: it
+        // would otherwise be passed to `networksetup` as a service name, and
+        // its failure would abort the whole run.
+        .where((line) => !line.contains('(*)'))
         .toList();
   }
 }
