@@ -146,7 +146,7 @@ final class TrayDelaysProvider
   }
 }
 
-String _$trayDelaysHash() => r'0c4d9a22b45ad597c4f4278b0ed2cadc9c1861e6';
+String _$trayDelaysHash() => r'19f505925e885f983f36ddd19498294dd78e4a32';
 
 @ProviderFor(trayTitleState)
 final trayTitleStateProvider = TrayTitleStateProvider._();
@@ -1811,7 +1811,7 @@ final class CurrentGroupsStateProvider
 }
 
 String _$currentGroupsStateHash() =>
-    r'c93e02f94abd4284bff58c42a931df0b35883bd4';
+    r'cceabd6ea363b7f72874a834e9779eec5962e858';
 
 @ProviderFor(proxyState)
 final proxyStateProvider = ProxyStateProvider._();
@@ -1953,7 +1953,7 @@ final class DelaysAtLastTestBatchProvider
 }
 
 String _$delaysAtLastTestBatchHash() =>
-    r'b7bf68c5f406a472e8b4e300f30e345801f4df41';
+    r'651081ce4143c233845cc5a89237f7d6d9c92bc2';
 
 @ProviderFor(visibleGroupsState)
 final visibleGroupsStateProvider = VisibleGroupsStateProvider._();
@@ -2054,7 +2054,7 @@ final class FilterGroupsStateProvider
   }
 }
 
-String _$filterGroupsStateHash() => r'5911b39b019755fc8c559d3e942aec3e1132c6c3';
+String _$filterGroupsStateHash() => r'033d9cac872ce94663be15e777e6057bd385d88d';
 
 final class FilterGroupsStateFamily extends $Family
     with $FunctionalFamilyOverride<GroupsState, String> {
@@ -2395,7 +2395,7 @@ final class RealTestUrlProvider
   }
 }
 
-String _$realTestUrlHash() => r'6d68caa7a526b6788e3e4899d3ec8ad1c065b15e';
+String _$realTestUrlHash() => r'f990657754638550e66b755591d4c3826f8f99e2';
 
 final class RealTestUrlFamily extends $Family
     with $FunctionalFamilyOverride<String, String?> {
@@ -2891,7 +2891,7 @@ final class SelectedProxyNameProvider
   }
 }
 
-String _$selectedProxyNameHash() => r'417c99385108d630b7cc8aaa3e94abd7011cbc58';
+String _$selectedProxyNameHash() => r'96b87670adb449a9552e7116fec9b5d1e17be4f7';
 
 final class SelectedProxyNameFamily extends $Family
     with $FunctionalFamilyOverride<String?, String> {
@@ -2968,7 +2968,7 @@ final class ProxyDescProvider
   }
 }
 
-String _$proxyDescHash() => r'51e05ee6692e26b066ca5bf1d6ab420df6cda947';
+String _$proxyDescHash() => r'd4f355f92a1e3db2a3aa684be7499bd778e03646';
 
 final class ProxyDescFamily extends $Family
     with $FunctionalFamilyOverride<String, ({String name, String type})> {
