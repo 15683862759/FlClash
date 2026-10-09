@@ -236,6 +236,12 @@ gradle -p android --no-daemon -I <init-script-with-mirrors> \
 does, because that task runs the native build hooks: without the Android NDK its `rust_api` step
 fails, and the VPN/state tests under `android/tests/` do not depend on it.
 
+That `rust_api` step also runs bindgen, which needs a libclang of its own: the Linux and macOS
+NDKs carry one, but the Windows NDKs from r27 on carry none, so a Windows host stops with
+`No libclang for bindgen` until `LIBCLANG_PATH` names a directory holding `libclang.dll` (an LLVM
+installation provides one). Everything else the Android Rust build needs comes from the NDK
+Flutter passes.
+
 ## Changelog And Release
 
 The changelog is derived from Conventional Commits by `tool/changelog.dart` and written to two committed files:
