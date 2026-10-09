@@ -979,7 +979,10 @@ void main() {
       expect(await action.setRunning(true), isTrue);
 
       expect(coreAction.restartCount, 1);
-      expect(action.transitions, [true]);
+      // The press asks for the proxy: the listener is retried once the Core is
+      // back, so the session ends up running rather than merely revived.
+      expect(action.transitions, [true, true]);
+      expect(container.read(isStartProvider), isTrue);
     });
 
     test('starting a connected core still toggles the listener', () async {
@@ -1131,6 +1134,7 @@ class _RaceSetupAction extends SetupAction {
     transitions.add(running);
     final startError = this.startError;
     if (running && startError != null) {
+      this.startError = null;
       throw startError;
     }
     return running

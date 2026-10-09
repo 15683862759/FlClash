@@ -199,7 +199,13 @@ class SetupAction extends _$SetupAction {
         // proxy: bring it back instead of failing on a listener that can never
         // answer. The restart applies the profile itself, and its own start
         // takes the initialize path, which is what keeps this from looping.
-        return ref.read(coreActionProvider.notifier).restartCore();
+        final restarted = await ref
+            .read(coreActionProvider.notifier)
+            .restartCore();
+        // Rolling back cleared the session, so the restart saw nobody waiting
+        // and only applied the profile; ask for the listener now that the Core
+        // answers again.
+        return restarted && await setRunning(true);
       }
       rethrow;
     }
