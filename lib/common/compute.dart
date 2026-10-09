@@ -183,6 +183,48 @@ Map<String, String> _proxyTypesFor(List<Group> allGroups) {
   };
 }
 
+String resolveSelectedProxyName(Group group, String? storedName) {
+  final live = group.realNow;
+  if (group.type == GroupType.LoadBalance || group.type == GroupType.Relay) {
+    return group.all.any((proxy) => proxy.name == live) ? live : '';
+  }
+
+  final stored = storedName ?? '';
+  final selected = group.getCurrentSelectedName(stored);
+  var hasSelected = false;
+  var hasLive = false;
+  var hasStored = false;
+  for (final proxy in group.all) {
+    final name = proxy.name;
+    if (selected.isNotEmpty && name == selected) {
+      hasSelected = true;
+    }
+    if (live.isNotEmpty && name == live) {
+      hasLive = true;
+    }
+    if (stored.isNotEmpty && name == stored) {
+      hasStored = true;
+    }
+    if (hasSelected && hasLive && hasStored) {
+      break;
+    }
+  }
+  if (hasSelected) {
+    return selected;
+  }
+  if (hasLive) {
+    return live;
+  }
+  if (hasStored) {
+    return stored;
+  }
+  if (stored.isEmpty) {
+    return '';
+  }
+  // A stale stored name still needs a member to locate.
+  return group.all.isNotEmpty ? group.all.first.name : '';
+}
+
 List<Group> computeHideTimeout({
   required List<Group> groups,
   required List<Group> allGroups,
@@ -196,8 +238,9 @@ List<Group> computeHideTimeout({
   return groups.map((group) {
     final groupTestUrl = group.testUrl.takeFirstValid([defaultTestUrl]);
     final groupWithNow = allGroups.getGroup(group.name) ?? group;
-    final selectedName = groupWithNow.getCurrentSelectedName(
-      selectedMap[group.name] ?? '',
+    final selectedName = resolveSelectedProxyName(
+      groupWithNow,
+      selectedMap[group.name],
     );
     final visible = group.all.where((proxy) {
       if (proxy.name == selectedName) {
@@ -231,22 +274,42 @@ SelectedProxyState getRealSelectedProxyState(
   Map<String, Group>? groupsByName,
   required Map<String, String> selectedMap,
 }) {
+  return _getRealSelectedProxyState(
+    state,
+    groups: groups,
+    groupsByName: groupsByName,
+    selectedMap: selectedMap,
+    visited: null,
+  );
+}
+
+SelectedProxyState _getRealSelectedProxyState(
+  SelectedProxyState state, {
+  required List<Group> groups,
+  Map<String, Group>? groupsByName,
+  required Map<String, String> selectedMap,
+  Set<String>? visited,
+}) {
   if (state.proxyName.isEmpty) return state;
   final groupIndex = groupsByName ?? _indexGroups(groups);
   final group = groupIndex[state.proxyName];
   final newState = state.copyWith(group: true);
   if (group == null) return newState;
-  final currentSelectedName = group.getCurrentSelectedName(
-    selectedMap[newState.proxyName] ?? '',
+  final visitedGroups = visited ?? <String>{};
+  if (!visitedGroups.add(state.proxyName)) return state;
+  final currentSelectedName = resolveSelectedProxyName(
+    group,
+    selectedMap[newState.proxyName],
   );
   if (currentSelectedName.isEmpty) {
     return newState;
   }
-  return getRealSelectedProxyState(
+  return _getRealSelectedProxyState(
     newState.copyWith(proxyName: currentSelectedName, testUrl: group.testUrl),
     groups: groups,
     groupsByName: groupIndex,
     selectedMap: selectedMap,
+    visited: visitedGroups,
   );
 }
 

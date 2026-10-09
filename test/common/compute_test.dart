@@ -144,6 +144,27 @@ void main() {
       expect(state.proxyName, 'proxy-b');
     });
 
+    test('Selector group falls back to realNow when selectedMap is stale', () {
+      final groups = [
+        const Group(
+          name: 'selector',
+          type: GroupType.Selector,
+          now: 'proxy-a',
+          all: [
+            Proxy(name: 'proxy-a', type: 'ss'),
+            Proxy(name: 'proxy-b', type: 'ss'),
+          ],
+        ),
+      ];
+      final state = computeRealSelectedProxyState(
+        'selector',
+        groups: groups,
+        selectedMap: {'selector': 'removed'},
+      );
+      expect(state.proxyName, 'proxy-a');
+      expect(state.group, true);
+    });
+
     test('duplicate group names keep the first group', () {
       final groups = [
         const Group(
@@ -167,6 +188,32 @@ void main() {
       );
 
       expect(state.proxyName, 'first');
+    });
+
+    test('cyclic group selections stop at the repeated group', () {
+      final groups = [
+        const Group(
+          name: 'loop-a',
+          type: GroupType.Selector,
+          now: 'loop-b',
+          all: [Proxy(name: 'loop-b', type: 'Selector')],
+        ),
+        const Group(
+          name: 'loop-b',
+          type: GroupType.Selector,
+          now: 'loop-a',
+          all: [Proxy(name: 'loop-a', type: 'Selector')],
+        ),
+      ];
+
+      final state = computeRealSelectedProxyState(
+        'loop-a',
+        groups: groups,
+        selectedMap: {},
+      );
+
+      expect(state.proxyName, 'loop-a');
+      expect(state.group, true);
     });
   });
 
@@ -571,6 +618,27 @@ void main() {
         'slow',
         'untested',
       ]);
+    });
+
+    test('keeps the live pick when the stored selection is stale', () {
+      const selectedGroup = Group(
+        name: 'sel',
+        type: GroupType.Selector,
+        now: 'slow',
+        all: [
+          Proxy(name: 'fast', type: 'ss'),
+          Proxy(name: 'slow', type: 'ss'),
+        ],
+      );
+      final groups = hide(
+        groups: [selectedGroup],
+        delayMap: {
+          defaultTestUrl: {'slow': -1},
+        },
+        selectedMap: {'sel': 'removed'},
+      );
+
+      expect(groups.single.all.map((proxy) => proxy.name), ['fast', 'slow']);
     });
 
     test('keeps built-in adapters a delay probe cannot reach', () {

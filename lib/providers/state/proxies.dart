@@ -345,47 +345,7 @@ String? selectedProxyName(Ref ref, String groupName) {
   if (group == null) {
     return null;
   }
-
-  bool hasMember(String name) =>
-      name.isNotEmpty && group.all.any((proxy) => proxy.name == name);
-  if (group.type == GroupType.LoadBalance || group.type == GroupType.Relay) {
-    return hasMember(group.realNow) ? group.realNow : '';
-  }
-
-  final stored = proxyName ?? '';
-  final selected = group.getCurrentSelectedName(stored);
-  final live = group.realNow;
-  var hasSelected = false;
-  var hasLive = false;
-  var hasStored = false;
-  for (final proxy in group.all) {
-    final name = proxy.name;
-    if (selected.isNotEmpty && name == selected) {
-      hasSelected = true;
-    }
-    if (live.isNotEmpty && name == live) {
-      hasLive = true;
-    }
-    if (stored.isNotEmpty && name == stored) {
-      hasStored = true;
-    }
-    if (hasSelected && hasLive && hasStored) {
-      break;
-    }
-  }
-  if (hasSelected) {
-    return selected;
-  }
-  if (hasLive) {
-    return live;
-  }
-  if (hasStored) {
-    return stored;
-  }
-  if (stored.isEmpty) {
-    return '';
-  }
-  return group.all.firstOrNull?.name ?? '';
+  return resolveSelectedProxyName(group, proxyName);
 }
 
 final _proxySearchTexts = Expando<String>('proxySearchTexts');
