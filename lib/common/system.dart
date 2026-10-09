@@ -326,11 +326,24 @@ class Windows {
 
 typedef ElevatedHelperInstaller = Future<bool> Function();
 
+typedef HelperInstallProbe =
+    Future<HelperReadiness> Function({Duration? timeout, bool logFailure});
+
+Future<HelperReadiness> _probeHelperReadiness({
+  Duration? timeout,
+  bool logFailure = true,
+}) {
+  return helperClient.readiness(timeout: timeout, logFailure: logFailure);
+}
+
 @visibleForTesting
 Future<AuthorizeCode> registerHelperService(
-  ElevatedHelperInstaller install,
-) async {
-  final readiness = await helperClient.readiness();
+  ElevatedHelperInstaller install, {
+  HelperInstallProbe probe = _probeHelperReadiness,
+  Duration waitTimeout = const Duration(seconds: 6),
+  Duration waitInterval = const Duration(seconds: 1),
+}) async {
+  final readiness = await probe();
   switch (readiness) {
     case HelperReadiness.ready:
       commonPrint.log('helper service is ready');
@@ -362,7 +375,11 @@ Future<AuthorizeCode> registerHelperService(
     return AuthorizeCode.error;
   }
 
-  final isRunning = await _waitForHelperService();
+  final isRunning = await _waitForHelperService(
+    probe: probe,
+    timeout: waitTimeout,
+    interval: waitInterval,
+  );
   commonPrint.log(
     isRunning
         ? 'helper service installation completed'
@@ -372,16 +389,18 @@ Future<AuthorizeCode> registerHelperService(
   return isRunning ? AuthorizeCode.success : AuthorizeCode.error;
 }
 
-Future<bool> _waitForHelperService() async {
-  const timeout = Duration(seconds: 6);
-  const interval = Duration(seconds: 1);
+Future<bool> _waitForHelperService({
+  required HelperInstallProbe probe,
+  required Duration timeout,
+  required Duration interval,
+}) async {
   const maxAttempts = 6;
   final stopwatch = Stopwatch()..start();
   for (var attempt = 0; attempt < maxAttempts; attempt++) {
     final remaining = timeout - stopwatch.elapsed;
     if (remaining <= Duration.zero) return false;
     final isRunning =
-        await helperClient.readiness(timeout: remaining, logFailure: false) ==
+        await probe(timeout: remaining, logFailure: false) ==
         HelperReadiness.ready;
     if (isRunning) return true;
     final delay = timeout - stopwatch.elapsed;

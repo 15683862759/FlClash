@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/core/desktop/helper_client.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
@@ -311,6 +313,69 @@ void main() {
       processes.stubThrow('pkexec');
 
       expect(await Linux().installService(), isFalse);
+    });
+  });
+
+  group('registerHelperService', () {
+    HelperInstallProbe probeOf(HelperReadiness readiness) {
+      return ({Duration? timeout, bool logFailure = true}) async => readiness;
+    }
+
+    test('leaves a service that answers alone', () async {
+      var installed = false;
+
+      final code = await registerHelperService(() async {
+        installed = true;
+        return true;
+      }, probe: probeOf(HelperReadiness.ready));
+
+      expect(code, AuthorizeCode.none);
+      expect(installed, isFalse);
+    });
+
+    test('reports an installation the user dismissed', () async {
+      final code = await registerHelperService(
+        () async => false,
+        probe: probeOf(HelperReadiness.notReady),
+      );
+
+      expect(code, AuthorizeCode.error);
+    });
+
+    test('reports a service that never comes up', () async {
+      var probes = 0;
+
+      final code = await registerHelperService(
+        () async => true,
+        probe: ({Duration? timeout, bool logFailure = true}) async {
+          probes++;
+          return HelperReadiness.notReady;
+        },
+        waitTimeout: const Duration(milliseconds: 20),
+        waitInterval: const Duration(milliseconds: 5),
+      );
+
+      expect(code, AuthorizeCode.error);
+      expect(probes, greaterThan(1));
+    });
+
+    test('reports an installation that comes up', () async {
+      var first = true;
+
+      final code = await registerHelperService(
+        () async => true,
+        probe: ({Duration? timeout, bool logFailure = true}) async {
+          if (first) {
+            first = false;
+            return HelperReadiness.notReady;
+          }
+          return HelperReadiness.ready;
+        },
+        waitTimeout: const Duration(seconds: 1),
+        waitInterval: const Duration(milliseconds: 5),
+      );
+
+      expect(code, AuthorizeCode.success);
     });
   });
 
