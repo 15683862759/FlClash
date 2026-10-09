@@ -14,10 +14,18 @@ import com.follow.clash.common.GlobalState
 import com.follow.clash.common.R as CommonR
 import com.follow.clash.core.Core
 import com.follow.clash.service.models.CIDR
+import com.follow.clash.service.models.DNS
+import com.follow.clash.service.models.DNS6
+import com.follow.clash.service.models.IPV4_ADDRESS
+import com.follow.clash.service.models.IPV6_ADDRESS
+import com.follow.clash.service.models.NET_ANY
+import com.follow.clash.service.models.NET_ANY6
 import com.follow.clash.service.models.VpnOptions
 import com.follow.clash.service.models.getIpv4RouteAddress
 import com.follow.clash.service.models.getIpv6RouteAddress
 import com.follow.clash.service.models.toCIDR
+import com.follow.clash.service.models.tunAddress
+import com.follow.clash.service.models.tunDns
 import com.follow.clash.service.modules.ServiceModules
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
@@ -63,29 +71,6 @@ class VpnService : SystemVpnService(), ManagedService {
             .orEmpty()
         return uidPackageNameMap.putIfAbsent(uid, packageName) ?: packageName
     }
-
-    private val VpnOptions.tunAddress
-        get(): String = buildString {
-            append(IPV4_ADDRESS)
-            if (ipv6) {
-                append(",")
-                append(IPV6_ADDRESS)
-            }
-        }
-
-    private val VpnOptions.tunDns
-        get(): String {
-            if (dnsHijacking) {
-                return NET_ANY
-            }
-            return buildString {
-                append(DNS)
-                if (ipv6) {
-                    append(",")
-                    append(DNS6)
-                }
-            }
-        }
 
     override fun onLowMemory() {
         Core.forceGC()
@@ -285,12 +270,6 @@ class VpnService : SystemVpnService(), ManagedService {
     }
 
     companion object {
-        private const val IPV4_ADDRESS = "172.19.0.1/30"
-        private const val IPV6_ADDRESS = "fdfe:dcba:9876::1/126"
-        private const val DNS = "172.19.0.2"
-        private const val DNS6 = "fdfe:dcba:9876::2"
-        private const val NET_ANY = "0.0.0.0"
-        private const val NET_ANY6 = "::"
         private const val LOCAL_HOST = "127.0.0.1"
         private const val MTU = 9000
     }
