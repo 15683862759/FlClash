@@ -65,6 +65,17 @@ const _actionIconTheme = ActionIconThemeData(
   closeButtonIconBuilder: _closeButtonIcon,
 );
 
+const _autoUpdateRetryFloor = Duration(minutes: 5);
+const _autoUpdateRetryCap = Duration(hours: 1);
+
+/// How long to wait before sweeping again while an attempt keeps leaving
+/// subscriptions due: one that fails is retried rarely instead of every few
+/// minutes, and a wait that short still picks a network back up quickly.
+Duration nextAutoUpdateRetryDelay(Duration previous) {
+  final doubled = previous * 2;
+  return doubled > _autoUpdateRetryCap ? _autoUpdateRetryCap : doubled;
+}
+
 Duration? nextProfileAutoUpdateDelay(Iterable<Profile> profiles, DateTime now) {
   Duration? next;
   for (final profile in profiles) {
@@ -93,6 +104,7 @@ Widget _closeButtonIcon(BuildContext context) =>
 
 class ApplicationState extends ConsumerState<Application> {
   Timer? _autoUpdateProfilesTaskTimer;
+  Duration _autoUpdateRetryDelay = _autoUpdateRetryFloor;
   Set<ConnectivityResult>? _previousConnectivity;
 
   final _pageTransitionsTheme = const PageTransitionsTheme(
@@ -178,19 +190,25 @@ class ApplicationState extends ConsumerState<Application> {
   }
 
   Future<void> _runAutoUpdateProfilesTask() async {
-    final hadDueProfile =
+    await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
+    if (!mounted) {
+      return;
+    }
+    // An attempt that failed leaves its subscription due, and waiting the same
+    // few minutes again would keep a dead link busy all day.
+    final stillDue =
         nextProfileAutoUpdateDelay(
           ref.read(profilesProvider),
           DateTime.now(),
         ) ==
         Duration.zero;
-    await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
-    if (!mounted) {
+    if (!stillDue) {
+      _autoUpdateRetryDelay = _autoUpdateRetryFloor;
+      _scheduleAutoUpdateProfilesTask();
       return;
     }
-    _scheduleAutoUpdateProfilesTask(
-      minimumDelay: hadDueProfile ? const Duration(minutes: 5) : null,
-    );
+    _autoUpdateRetryDelay = nextAutoUpdateRetryDelay(_autoUpdateRetryDelay);
+    _scheduleAutoUpdateProfilesTask(minimumDelay: _autoUpdateRetryDelay);
   }
 
   Future<void> _handleConnectivityChanged(

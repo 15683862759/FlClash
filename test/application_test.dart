@@ -225,4 +225,25 @@ void main() {
       );
     });
   });
+
+  group('profile auto update retry', () {
+    test('doubles the wait and stops at an hour', () {
+      var wait = const Duration(minutes: 5);
+      final waits = <Duration>[];
+
+      for (var attempt = 0; attempt < 6; attempt++) {
+        wait = nextAutoUpdateRetryDelay(wait);
+        waits.add(wait);
+      }
+
+      expect(waits, [
+        const Duration(minutes: 10),
+        const Duration(minutes: 20),
+        const Duration(minutes: 40),
+        const Duration(hours: 1),
+        const Duration(hours: 1),
+        const Duration(hours: 1),
+      ]);
+    });
+  });
 }
