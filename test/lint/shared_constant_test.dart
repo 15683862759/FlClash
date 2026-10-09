@@ -37,6 +37,52 @@ void main() {
       expect(url, defaultTestUrl, reason: 'the schema suggests $url');
     }
   });
+
+  test('the app and the core agree on the service ids', () {
+    final app = File('lib/common/service_probe.dart').readAsStringSync();
+    final core = File('core/service_check.go').readAsStringSync();
+    final targets = _enumValues(app, 'ServiceTarget', r"^\s{2}\w+\('([^']+)',");
+    final statuses = _enumValues(
+      app,
+      'ServiceProbeStatus',
+      r"^\s{2}\w+\('([^']+)'\)",
+    );
+    final registered = _quotedValues(core, r'\{name: "([^"]+)", check:');
+    final reported = _quotedValues(core, r'service\w+\s*=\s*"([^"]+)"');
+
+    expect(targets, isNotEmpty);
+    expect(statuses, isNotEmpty);
+    expect(registered, isNotEmpty);
+    expect(reported, isNotEmpty);
+    expect(
+      targets,
+      registered,
+      reason: 'a ServiceTarget id must name a checker the core registers',
+    );
+    expect(
+      statuses,
+      reported,
+      reason: 'a ServiceProbeStatus id must be a status the core reports',
+    );
+  });
+}
+
+Set<String> _enumValues(String source, String name, String pattern) {
+  final start = source.indexOf('enum $name {');
+  if (start < 0) {
+    fail('could not find enum $name in the app sources');
+  }
+  final body = source.substring(start, source.indexOf(';', start));
+  return RegExp(
+    pattern,
+    multiLine: true,
+  ).allMatches(body).map((match) => match.group(1)!).toSet();
+}
+
+Set<String> _quotedValues(String source, String pattern) {
+  return RegExp(
+    pattern,
+  ).allMatches(source).map((match) => match.group(1)!).toSet();
 }
 
 String _dartConst(String source, String name) {
