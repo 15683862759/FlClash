@@ -359,7 +359,9 @@ class _ProxyComputedMark extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = ref.watch(
-      proxyNameProvider(groupName).select((state) => state == proxy.name),
+      selectedProxyNameProvider(
+        groupName,
+      ).select((state) => state == proxy.name),
     );
     if (!isSelected) {
       return const SizedBox.shrink();

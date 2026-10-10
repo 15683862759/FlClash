@@ -6,6 +6,8 @@ import 'package:fl_clash/providers/database.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/proxies/tab.dart';
+import 'package:fl_clash/views/proxies/card.dart';
+import 'package:fl_clash/widgets/widgets.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -176,6 +178,45 @@ void main() {
     expect(tabBar.controller?.length, 3);
     expect(key.currentState?.currentGroup?.name, 'B');
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('marks the live selected node in a computed group', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const group = Group(
+      type: GroupType.URLTest,
+      name: 'Auto',
+      now: 'Node B',
+      all: [
+        Proxy(name: 'Node A', type: 'ss'),
+        Proxy(name: 'Node B', type: 'ss'),
+      ],
+    );
+    globalContainer.read(groupsProvider.notifier).value = [group];
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: globalContainer,
+        child: const TestApp(
+          child: Scaffold(
+            body: ProxyCard(
+              groupName: 'Auto',
+              groupType: GroupType.URLTest,
+              proxy: Proxy(name: 'Node B', type: 'ss'),
+              type: ProxyCardType.expand,
+              testUrl: null,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(SelectIcon), findsOneWidget);
   });
 }
 
