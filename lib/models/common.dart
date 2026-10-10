@@ -235,6 +235,7 @@ abstract class TrackerInfosState with _$TrackerInfosState {
 }
 
 final _trackerInfoSearchTexts = Expando<String>();
+final _dnsQuerySearchTexts = Expando<String>();
 
 extension TrackerInfosStateExt on TrackerInfosState {
   bool get isSearching => keywords.isNotEmpty || SearchQuery(query).isNotEmpty;
@@ -327,7 +328,11 @@ extension DnsQueriesStateExt on DnsQueriesState {
     }
     return dnsQueries
         .where((dnsQuery) => keywords.every(dnsQuery.tags.contains))
-        .whereMatches(searchQuery, (dnsQuery) => dnsQuery.searchFields)
+        .whereMatches(
+          searchQuery,
+          (dnsQuery) => dnsQuery.searchFields,
+          texts: _dnsQuerySearchTexts,
+        )
         .toList();
   }
 }
