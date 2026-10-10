@@ -7,9 +7,9 @@ void main() {
   late YamlMap workflow;
 
   setUpAll(() {
-    workflow = loadYaml(
-      File('.github/workflows/build.yaml').readAsStringSync(),
-    ) as YamlMap;
+    workflow =
+        loadYaml(File('.github/workflows/build.yaml').readAsStringSync())
+            as YamlMap;
   });
 
   test('tag releases run for this fork', () {
@@ -20,11 +20,9 @@ void main() {
 
     for (final job in [build, upload]) {
       final condition = job['if'] as String;
-      final repositories =
-          RegExp(r"github\.repository == '([^']+)'")
-              .allMatches(condition)
-              .map((match) => match.group(1)!)
-              .toSet();
+      final repositories = RegExp(
+        r"github\.repository == '([^']+)'",
+      ).allMatches(condition).map((match) => match.group(1)!).toSet();
       expect(repositories, contains(repository), reason: condition);
     }
 
